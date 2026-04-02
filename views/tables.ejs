@@ -1,171 +1,182 @@
 <!DOCTYPE html>
-<html lang='en' data-theme="<%= theme %>">
+<html lang="en" class="h-full" data-theme="<%= theme %>">
 
 <head>
-  <%- include('partials/head') %>
-  <%- include('partials/bootstrap-deps') %>
-  <%- include('partials/head-tail') %>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- include('partials/head') %>
+    <%- include('partials/head-tail') %>
 </head>
 
-<body class='container'>
-  <header>
-    <%
-      const breadcrumb = [
-        {
-          active: true,
-          href: '/',
-          text: 'Tables',
-        },
-      ]
-    %>
-    <%- include('partials/breadcrumb', { breadcrumb }) %>
-    <%- include('partials/error-container') %>
-  </header>
-  <main>
+<body class="min-h-full flex flex-col px-0 py-0 bg-slate-50 dark:bg-slate-950">
+
+    <%- include('partials/header', {
+        breadcrumb: [
+            { text: 'Local', icon: 'server' },
+            { text: 'shared-local-instance.db', active: true }
+        ],
+        tabs: [],
+        actions: `
+            <a href="/create-table" class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all">
+                <i data-lucide="plus" class="w-3.5 h-3.5 mr-1.5"></i>
+                CREATE TABLE
+            </a>
+            <div class="h-6 w-px bg-slate-700"></div>
+            <button onclick="showCustomModal('purgeAll')" class="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded transition-colors" title="Purge All Tables">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+            </button>
+            <button onclick="showCustomModal('deleteAll')" class="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded transition-colors" title="Drop All Tables">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+        `
+    }) %>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 mt-[72px] text-slate-900 dark:text-slate-100">
+
+        <!-- Filter Input -->
+        <div class="mb-4">
+            <div class="relative max-w-md">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                </div>
+                <input type="search" id="filter-input"
+                autocomplete="off"
+                    class="block w-full pl-10 pr-3 py-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all
+                    placeholder:italic placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    placeholder="Find tables">
+            </div>
+        </div>
+
+        <!-- Table List Header (Tools Header) -->
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-t-lg overflow-hidden">
+            <div class="grid grid-cols-12 gap-4 px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-500 uppercase tracking-widest mono">
+                <div class="col-span-4 flex items-center">
+                    <i data-lucide="table-2" class="w-3 h-3 mr-2"></i>
+                    Table Identifier
+                </div>
+                <div class="col-span-2 flex items-center">
+                    <i data-lucide="key-round" class="w-3 h-3 mr-2"></i>
+                    Partition Key
+                </div>
+                <div class="col-span-1 flex items-center">
+                    <i data-lucide="key-square" class="w-3 h-3 mr-2"></i>
+                    Sort Key
+                </div>
+                <div class="col-span-2 flex items-center justify-end">
+                    <i data-lucide="hash" class="w-3 h-3 mr-2"></i>
+                    Records
+                </div>
+                <div class="col-span-3 flex items-center justify-end">
+                    <i data-lucide="settings" class="w-3 h-3 mr-2"></i>
+                    Operations
+                </div>
+            </div>
+
+            <!-- Table Rows -->
+            <div id="table-list" class="divide-y divide-slate-100 dark:divide-slate-700">
+                <% for(var i = 0; i < data.length; i++) { %>
+                <div class="grid grid-cols-12 gap-4 px-4 py-3 items-center group transition-all duration-150 border-l-3 border-l-transparent hover:bg-slate-50 hover:border-l-blue-500 dark:hover:bg-slate-700 dark:hover:border-l-blue-400" data-table-name="<%= data[i].TableName %>">
+                    <div class="col-span-4 flex items-center min-w-0">
+                        <div class="w-2 h-2 rounded-full bg-green-500 mr-3 shrink-0"></div>
+                        <a href='/tables/<%= encodeURIComponent(data[i].TableName) %>' class="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline underline-offset-2 mono truncate transition-colors">
+                            <%= data[i].TableName %>
+                        </a>
+                    </div>
+                    <%
+                        const hashKey = data[i].KeySchema?.find(k => k.KeyType === 'HASH');
+                        const rangeKey = data[i].KeySchema?.find(k => k.KeyType === 'RANGE');
+                    %>
+                    <div class="col-span-2 flex items-center min-w-0">
+                        <% if (hashKey) { %>
+                            <span class="text-xs font-medium text-slate-600 dark:text-slate-400 mono truncate"><%= hashKey.AttributeName %></span>
+                        <% } else { %>
+                            <span class="text-xs text-slate-400">—</span>
+                        <% } %>
+                    </div>
+                    <div class="col-span-1 flex items-center min-w-0">
+                        <% if (rangeKey) { %>
+                            <span class="text-xs font-medium text-slate-600 dark:text-slate-400 mono truncate"><%= rangeKey.AttributeName %></span>
+                        <% } else { %>
+                            <span class="text-xs text-slate-400">—</span>
+                        <% } %>
+                    </div>
+                    <div class="col-span-2 text-right">
+                        <span class="text-xs text-slate-500 mono bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                            <%= data[i].ItemCount.toLocaleString() %>
+                        </span>
+                    </div>
+                    <div class="col-span-3 text-right flex justify-end items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <!-- Safe Actions -->
+                        <div class="flex items-center gap-1">
+                            <a href="/tables/<%= encodeURIComponent(data[i].TableName) %>/add-item" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded" title="Create Item">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            </a>
+                            <a href="/tables/<%= encodeURIComponent(data[i].TableName) %>/meta" class="p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700/30 rounded transition-colors" title="View Metadata">
+                                <i data-lucide="info" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                        <!-- Separator -->
+                        <div class="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                        <!-- Danger Actions -->
+                        <div class="flex items-center gap-1">
+                            <button onclick="purgeTable('<%= data[i].TableName %>')" class="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded" title="Truncate Table">
+                                <i data-lucide="eraser" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteTable('<%= data[i].TableName %>')" class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded" title="Drop Table">
+                                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <% if (data.length === 0) { %>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-t-0 rounded-b-lg p-12 text-center">
+            <i data-lucide="box" class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4"></i>
+            <h3 class="text-slate-900 dark:text-slate-100 font-bold">Database Empty</h3>
+            <p class="text-slate-500 dark:text-slate-400 text-xs mono mt-1">NO_RELATIONS_FOUND_IN_SCHEMA</p>
+        </div>
+        <% } %>
+
+        <!-- Filter Empty State -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-t-0 rounded-b-lg text-center">
+            <i data-lucide="filter" class="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2"></i>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">No matches found</h3>
+            <p class="text-slate-500 dark:text-slate-400 text-[11px] mono">QUERY_RETURNED_ZERO_RESULTS</p>
+        </div>
+    </main>
+
+    <%- include('partials/confirmation-modal') %>
+
     <script>
-    $(document).ready(() => {
-      $('#filter-input')
-        .on('input', event => {
-          const query = event.target.value.trim().toLowerCase()
-          const words = query.split(' ').map(word => word.trim()).filter(word => word)
-          $('#table-list .list-group-item').show().each((index, element) => {
-            const lowerTableName = element.dataset.tableName.toLowerCase()
-            for (const word of words) {
-              if (!lowerTableName.includes(word)) {
-                $(element).hide()
-                return
-              }
-            }
-            $(element).show()
-          })
-          window.history.replaceState({}, undefined, getUrlWithState({ filter: query }))
-        })
-        .trigger('input')
-    })
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
 
-    function getUrlWithState({ filter }) {
-      const url = new URL(location.href);
-      if (filter) {
-        url.searchParams.set('filter', filter)
-      } else {
-        url.searchParams.delete('filter')
-      }
-      return url.toString()
-    }
+            const filterInput = document.querySelector('#filter-input');
+            filterInput.addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                const words = query.split(' ').filter(w => w);
+                const items = document.querySelectorAll('#table-list > div');
+                let visibleCount = 0;
 
-    function deleteTable(TableName) {
-      if (!confirm(`Are you sure you want to delete table "${TableName}"?`)) {
-        return
-      }
+                items.forEach(el => {
+                    const name = el.dataset.tableName.toLowerCase();
+                    const match = words.every(word => name.includes(word));
+                    el.style.display = match ? '' : 'none';
+                    if (match) visibleCount++;
+                });
 
-      fetch(`/tables/${encodeURIComponent(TableName)}`, {
-        method: 'delete'
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            const responseText = await response.text()
-            throw new Error(JSON.parse(responseText).message)
-          }
-          location.reload()
-        })
-        .catch((err) => {
-          handleError(error.message)
-        })
-    }
-
-    function purgeTable(TableName) {
-      if (!confirm(`Are you sure you want to purge all records from table "${TableName}"?`)) {
-        return
-      }
-
-      fetch(`/tables/${encodeURIComponent(TableName)}/all`, {
-        method: 'delete'
-      }).then(async (response) => {
-        if (!response.ok) {
-          const responseText = await response.text()
-          throw new Error(JSON.parse(responseText).message)
-        }
-        location.reload()
-      }).catch((error) => {
-        handleError(error.message)
-      })
-    }
-
-      function purgeAllTables () {
-        if (!confirm('Are you sure you want to purge all tables?')) {
-          return
-        }
-        fetch('/tables-purge', {
-          method: 'delete'
-        }).then(async (response) => {
-          const responseText = await response.text()
-          if (!response.ok) {
-            throw new Error(JSON.parse(responseText).message)
-          }
-          window.alert(responseText)
-          location.reload()
-        }).catch((error) => {
-          handleError(error.message)
-        })
-      }
-
-      function deleteAllTables () {
-        if (!confirm('Are you sure you want to delete all tables?')) {
-          return
-        }
-        fetch('/tables', {
-          method: 'delete'
-        }).then(async (response) => {
-          const responseText = await response.text()
-          if (!response.ok) {
-            throw new Error(JSON.parse(responseText).message)
-          }
-          window.alert(responseText)
-          location.reload()
-        }).catch((error) => {
-          handleError(error.message)
-        })
-      }
-
+                const emptyState = document.querySelector('#empty-state');
+                emptyState.style.display = visibleCount === 0 ? 'flex' : 'none';
+            });
+            // Trigger initial filter
+            filterInput.dispatchEvent(new Event('input'));
+        });
     </script>
 
-    <div class="form-group">
-      <input type="search" class="form-control mb-3" id="filter-input" placeholder="Filter tables">
-    </div>
-
-    <ul class="list-group" id="table-list">
-      <% for(var i = 0; i < data.length; i++) { %>
-        <li class="list-group-item" data-table-name="<%= data[i].TableName %>">
-          <a href='/tables/<%= encodeURIComponent(data[i].TableName) %>'>
-            <%= data[i].TableName %>
-          </a>
-          <a href="#" onClick="deleteTable('<%= data[i].TableName %>'); return false"
-              class="badge badge-danger badge-pill float-right ml-1">
-            Delete
-          </a>
-          <a href="/" onClick="purgeTable('<%= data[i].TableName %>'); return false"
-             class="badge badge-warning badge-pill float-right ml-1">
-            Purge
-          </a>
-          <span class="badge badge-secondary badge-pill float-right ml-1">
-            <%= data[i].ItemCount %>
-          </span>
-        </li>
-      <% } %>
-    </ul>
-    <div style="margin-top: 12px; display: flex; justify-content: space-between;">
-      <a href='/create-table' class="btn btn-primary">
-        Create table
-      </a>
-      <div>
-        <a href='#' class="btn btn-warning" onclick="purgeAllTables(); return false;">
-          Purge all tables
-        </a>
-        <a href='#' class="btn btn-danger" onclick="deleteAllTables(); return false;">
-          Delete all tables
-        </a>
-      </div>
-    </div>
-  </main>
+    <%- include('partials/confirmation-modal-script') %>
 </body>
+
 </html>

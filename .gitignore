@@ -5,3 +5,4 @@ yarn.lock
 .vscode/
 .npmrc
 dist/
+public/css/tailwind.css

@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f1f5f9;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', 'ui-monospace', monospace;
+  }
+
+  [data-theme="dark"] body {
+    background-color: #0f172a;
+    color: #f1f5f9;
+  }
+
+  /* go away, LastPass */
+  form[autocomplete="off"] input[type="text"] {
+    background-position: 150% 50% !important;
+  }
+
+  /* Prevent layout shift when scrollbar appears/disappears */
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+
+@layer components {
+  /* Form Components */
+  .input {
+    @apply block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-950 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all;
+    font-family: 'JetBrains Mono', 'ui-monospace', monospace;
+  }
+
+  .select {
+    @apply block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-950 dark:text-slate-50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all appearance-none;
+    font-family: 'JetBrains Mono', 'ui-monospace', monospace;
+  }
+
+  /* Label Components */
+  .label {
+    @apply block text-[15px] font-medium text-slate-800 dark:text-slate-200 mb-2;
+  }
+
+  .label-sm {
+    @apply flex items-center text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest;
+    font-family: 'JetBrains Mono', 'ui-monospace', monospace;
+  }
+
+  /* Button Components */
+  .btn {
+    @apply inline-flex items-center px-3 py-1.5 rounded text-xs font-bold shadow-lg transition-all;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center px-3 py-1.5 rounded text-xs font-bold shadow-lg transition-all bg-blue-600 hover:bg-blue-500 text-white;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center px-3 py-1.5 rounded text-xs font-bold shadow-lg transition-all bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center px-3 py-1.5 rounded text-xs font-bold shadow-lg transition-all bg-red-600/10 dark:bg-red-600/20 hover:bg-red-600 text-red-600 dark:text-red-400 hover:text-white border border-red-600/30 dark:border-red-600/40;
+  }
+
+  .btn-warning {
+    @apply inline-flex items-center px-3 py-1.5 rounded text-xs font-bold shadow-lg transition-all bg-amber-600/10 dark:bg-amber-600/20 hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white border border-amber-600/30 dark:border-amber-600/40;
+  }
+
+  .btn-icon {
+    @apply p-1.5 text-slate-400 hover:bg-slate-800 rounded transition-colors;
+  }
+
+  .btn-icon-danger {
+    @apply p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded transition-colors;
+  }
+
+  .btn-icon-warning {
+    @apply p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded transition-colors;
+  }
+
+  #documentArea {
+    @apply !absolute !inset-0 shadow-sm rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700;
+  }
+}

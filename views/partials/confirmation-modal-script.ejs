@@ -1,0 +1,85 @@
+<script>
+    let currentAction = null;
+
+    function showCustomModal(type, extra = '', redirectUrl = null) {
+        currentAction = { type, extra, redirectUrl };
+        const title = document.querySelector('#modal-title');
+        const desc = document.querySelector('#modal-desc');
+        const confirmBtn = document.querySelector('#modal-confirm-btn');
+
+        if (type === 'delete') {
+            title.textContent = 'DROP TABLE';
+            desc.textContent = `DROP TABLE "${extra}" CASCADE; -- This cannot be undone.`;
+            confirmBtn.textContent = 'DROP';
+            confirmBtn.className = 'flex-1 px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-500 rounded mono';
+        } else if (type === 'purge') {
+            title.textContent = 'TRUNCATE TABLE';
+            desc.textContent = `TRUNCATE TABLE "${extra}"; -- Empty all records but keep schema.`;
+            confirmBtn.textContent = 'TRUNCATE';
+            confirmBtn.className = 'flex-1 px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded mono';
+        } else if (type === 'purgeAll') {
+            title.textContent = 'TRUNCATE ALL';
+            desc.textContent = 'TRUNCATE ALL TABLES; -- Will clear all operational data.';
+            confirmBtn.textContent = 'EXECUTE';
+            confirmBtn.className = 'flex-1 px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded mono';
+        } else if (type === 'deleteAll') {
+            title.textContent = 'DROP ALL TABLES';
+            desc.textContent = 'DROP ALL TABLES IN SCHEMA "public"; -- Destructive action.';
+            confirmBtn.textContent = 'DROP ALL';
+            confirmBtn.className = 'flex-1 px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-500 rounded mono';
+        }
+
+        const modalContainer = document.querySelector('#modal-container');
+        const modalBox = document.querySelector('#modal-box');
+        modalContainer.classList.remove('hidden');
+        setTimeout(() => {
+            modalBox.classList.remove('scale-95', 'opacity-0');
+            modalBox.classList.add('scale-100', 'opacity-100');
+        }, 10);
+
+        confirmBtn.onclick = executeAction;
+    }
+
+    function closeModal() {
+        const modalBox = document.querySelector('#modal-box');
+        const modalContainer = document.querySelector('#modal-container');
+        modalBox.classList.remove('scale-100', 'opacity-100');
+        modalBox.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modalContainer.classList.add('hidden'), 200);
+    }
+
+    async function executeAction() {
+        const { type, extra, redirectUrl } = currentAction;
+        let url = '';
+        let method = 'DELETE';
+
+        switch(type) {
+            case 'delete': url = `/tables/${encodeURIComponent(extra)}`; break;
+            case 'purge': url = `/tables/${encodeURIComponent(extra)}/all`; break;
+            case 'purgeAll': url = '/tables-purge'; break;
+            case 'deleteAll': url = '/tables'; break;
+        }
+
+        try {
+            const response = await fetch(url, { method });
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(JSON.parse(errText).message || 'Action failed');
+            }
+
+            // Redirect to custom URL or reload current page
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            } else {
+                location.reload();
+            }
+        } catch (err) {
+            if (typeof handleError === 'function') handleError(err.message);
+            else alert(err.message);
+            closeModal();
+        }
+    }
+
+    function deleteTable(name, redirectUrl) { showCustomModal('delete', name, redirectUrl); }
+    function purgeTable(name, redirectUrl) { showCustomModal('purge', name, redirectUrl); }
+</script>

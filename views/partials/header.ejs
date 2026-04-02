@@ -1,0 +1,62 @@
+<%
+/**
+ * Unified header partial for all screens
+ *
+ * Parameters:
+ * - breadcrumb: Array of { text, url?, icon?, active? }
+ * - tabs: Optional array of { text, url, active }
+ * - actions: HTML string for right section buttons/links
+ */
+%>
+<header class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-md">
+    <div class="mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-18">
+            <!-- Left Section -->
+            <% if (tabs && tabs.length > 0) { %>
+                <!-- Two-tier: Breadcrumb + Tabs -->
+                <div class="flex flex-col min-w-0 gap-1">
+                    <div class="flex items-center space-x-2 text-sm tracking-wider text-slate-600 dark:text-slate-500 font-bold">
+                        <% breadcrumb.forEach((item, index) => { %>
+                            <% if (index > 0) { %><span>/</span><% } %>
+                            <% if (item.icon) { %>
+                                <i data-lucide="<%= item.icon %>" class="w-4 h-4"></i>
+                            <% } %>
+                            <% if (item.url && !item.active) { %>
+                                <a href="<%= item.url %>" class="hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><%= item.text %></a>
+                            <% } else { %>
+                                <span class="<%= item.active ? 'text-blue-600 dark:text-blue-300' : '' %>"><%= item.text %></span>
+                            <% } %>
+                        <% }) %>
+                    </div>
+                    <!-- Navigation Tabs -->
+                    <div class="flex items-center space-x-2 text-sm">
+                        <% tabs.forEach((tab, index) => { %>
+                            <% if (index > 0) { %><span class="text-slate-300 dark:text-slate-700">•</span><% } %>
+                            <a href="<%= tab.url %>" class="<%= tab.active ? 'text-blue-600 font-bold dark:hover:text-blue-200' : 'text-slate-600 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200' %> transition-colors"><%= tab.text %></a>
+                        <% }) %>
+                    </div>
+                </div>
+            <% } else { %>
+                <!-- Single-tier: Breadcrumb only -->
+                <div class="flex items-center space-x-2 text-sm tracking-wider text-slate-600 dark:text-slate-500 font-bold">
+                    <% breadcrumb.forEach((item, index) => { %>
+                        <% if (index > 0) { %><span>/</span><% } %>
+                        <% if (item.icon) { %>
+                            <i data-lucide="<%= item.icon %>" class="w-4 h-4"></i>
+                        <% } %>
+                        <% if (item.url && !item.active) { %>
+                            <a href="<%= item.url %>" class="hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><%= item.text %></a>
+                        <% } else { %>
+                            <span class="<%= item.active ? 'text-blue-600 dark:text-blue-300' : '' %>"><%= item.text %></span>
+                        <% } %>
+                    <% }) %>
+                </div>
+            <% } %>
+
+            <!-- Right Section -->
+            <div class="flex items-center space-x-2">
+                <%- actions %>
+            </div>
+        </div>
+    </div>
+</header>

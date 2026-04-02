@@ -1,29 +1,35 @@
 <!DOCTYPE html>
-<html lang='en' data-theme="<%= theme %>">
+<html lang="en" class="h-full" data-theme="<%= theme %>">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Table | DynamoDB</title>
     <%- include('partials/head') %>
-    <%- include('partials/bootstrap-deps') %>
-
+    <%- include('partials/head-tail') %>
     <script>
-        let secondaryIndexCount = 1
-        $(document).ready(() => {
-            $('#new-index').click(event => {
-                event.preventDefault()
-                $('.secondary-indexes').append([
-                    { index: secondaryIndexCount }
-                ].map(Item).join(''))
-                secondaryIndexCount++
-            })
+        let secondaryIndexCount = 1;
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
 
-            $('form').submit(async (event) => {
-                event.preventDefault()
+            document.querySelector('#new-index').addEventListener('click', event => {
+                event.preventDefault();
+                document.querySelector('.secondary-indexes').insertAdjacentHTML('beforeend', Item({ index: secondaryIndexCount }));
+                secondaryIndexCount++;
+                lucide.createIcons();
+            });
 
-                const formValues = $('form').serializeArray()
-                const secondaryIndexes = []
+            document.querySelector('form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const form = event.target;
+                const formData = new FormData(form);
+                const formValues = Array.from(formData.entries()).map(([name, value]) => ({ name, value }));
+
+                const secondaryIndexes = [];
                 for (let i = 0; i < secondaryIndexCount; i++) {
                     if (!formValues.find(formInput => formInput.name === `secondary-index-${i}-IndexName`)) {
-                        continue
+                        continue;
                     }
                     const index = {
                         IndexName: findFormInputValue(formValues, `secondary-index-${i}-IndexName`),
@@ -32,14 +38,14 @@
                         HashAttributeType: findFormInputValue(formValues, `secondary-index-${i}-HashAttributeType`),
                         RangeAttributeName: findFormInputValue(formValues, `secondary-index-${i}-RangeAttributeName`),
                         RangeAttributeType: findFormInputValue(formValues, `secondary-index-${i}-RangeAttributeType`)
-                    }
+                    };
 
                     if (index.IndexType !== 'local') {
-                        index.ReadCapacityUnits = findFormInputValue(formValues, `secondary-index-${i}-ReadCapacityUnits`)
+                        index.ReadCapacityUnits = findFormInputValue(formValues, `secondary-index-${i}-ReadCapacityUnits`),
                         index.WriteCapacityUnits = findFormInputValue(formValues, `secondary-index-${i}-WriteCapacityUnits`)
                     }
 
-                    secondaryIndexes.push(index)
+                    secondaryIndexes.push(index);
                 }
                 const createTableRequest = {
                     TableDefinition: {
@@ -52,221 +58,230 @@
                         WriteCapacityUnits: findFormInputValue(formValues, 'WriteCapacityUnits'),
                     },
                     SecondaryIndexes: secondaryIndexes
+                };
+
+                try {
+                    const response = await fetch(document.location.pathname, {
+                        method: 'post',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(createTableRequest)
+                    });
+                    if (response.ok) {
+                        window.location = '/';
+                    } else {
+                        const error = await response.text();
+                        handleError(JSON.parse(error).message);
+                    }
+                } catch (e) {
+                    handleError(e.message);
                 }
-                const response = await fetch(document.location.pathname, {
-                    method: 'post',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(createTableRequest)
-                })
-                if (response.ok) {
-                    window.location = '/'
-                } else {
-                    const error = await response.text()
-                    handleError(JSON.parse(error).message)
-                }
-            })
+            });
 
             function findFormInputValue(formValues, formInputName) {
-                return formValues.find(formInput => formInput.name === formInputName).value
+                const item = formValues.find(formInput => formInput.name === formInputName);
+                return item ? item.value : '';
             }
 
+            // Shared class strings for the JS template
+            const inputClasses = "input";
+            const selectClasses = "select";
+            const labelClasses = "label";
+
             const Item = ({ index }) => `
-                <div class="col-md-12 mb-4">
-                    <div class="row" id="secondary-index-${index}">
-                        <div class="col-md-10">
-                            <h4>Secondary Index (${index})</h4>
+                <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden mb-6 w-full" id="secondary-index-container-${index}">
+                    <div class="px-4 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="layers" class="w-4 h-4 text-blue-500"></i>
+                            <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">Secondary Index #${index}</span>
                         </div>
-                        <div class="col-md-2">
-                            <button class="btn btn-danger float-right" onclick="removeIndex('secondary-index-${index}')">Remove Index </button>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="IndexName">Index Name</label>
-                                <input required type="text" name="secondary-index-${index}-IndexName" class="form-control" autofocus />
+                        <button type="button" onclick="removeIndex('secondary-index-container-${index}')" class="text-slate-400 hover:text-red-500 transition-colors">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="p-8 flex flex-col space-y-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="flex flex-col">
+                                <label class="${labelClasses}">Index Name</label>
+                                <input required type="text" name="secondary-index-${index}-IndexName" class="${inputClasses}" placeholder="e.g. GSI1" />
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="IndexType">Index Type</label>
-                                <select onchange="onSecondaryIndexTypeSelect(this, ${index})" name="secondary-index-${index}-IndexType" class="form-control">
+                            <div class="flex flex-col">
+                                <label class="${labelClasses}">Index Type</label>
+                                <select onchange="onSecondaryIndexTypeSelect(this, ${index})" name="secondary-index-${index}-IndexType" class="${selectClasses}">
                                     <option value="global">Global Secondary Index (GSI)</option>
                                     <option value="local">Local Secondary Index (LSI)</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="HashAttributeName">Hash Attribute Name</label>
-                                <input required type="text" name="secondary-index-${index}-HashAttributeName" class="form-control" autofocus />
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="flex flex-col">
+                                <label class="${labelClasses}">Hash Attribute Name</label>
+                                <input required type="text" name="secondary-index-${index}-HashAttributeName" class="${inputClasses}" placeholder="pk" />
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="HashAttributeType">Hash Attribute Type</label>
-                                <select required name="secondary-index-${index}-HashAttributeType" class="form-control">
-                                    <option></option>
+                            <div class="flex flex-col">
+                                <label class="${labelClasses}">Hash Attribute Type</label>
+                                <select required name="secondary-index-${index}-HashAttributeType" class="${selectClasses}">
                                     <option value="S">String</option>
                                     <option value="N">Number</option>
                                     <option value="B">Binary</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="RangeAttributeName">Range Attribute Name (Optional)</label>
-                                <input type="text" name="secondary-index-${index}-RangeAttributeName" class="form-control" autofocus />
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="flex flex-col">
+                                <label class="${labelClasses}">Range Attribute Name (Optional)</label>
+                                <input type="text" name="secondary-index-${index}-RangeAttributeName" class="${inputClasses}" placeholder="sk" />
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="RangeAttributeType">Range Attribute Type (Optional)</label>
-                                <select name="secondary-index-${index}-RangeAttributeType" class="form-control">
-                                    <option></option>
+                            <div class="flex flex-col">
+                                <label class="${labelClasses}">Range Attribute Type (Optional)</label>
+                                <select name="secondary-index-${index}-RangeAttributeType" class="${selectClasses}">
+                                    <option value=""></option>
                                     <option value="S">String</option>
                                     <option value="N">Number</option>
                                     <option value="B">Binary</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="ReadCapacityUnits">ReadCapacityUnits</label>
-                                <input required type="number" id="secondary-index-${index}-ReadCapacityUnits" name="secondary-index-${index}-ReadCapacityUnits" class="form-control"
-                                    value="3" />
+
+                        <div class="grid grid-cols-2 gap-8 pt-8 border-t border-slate-100 dark:border-slate-700/50">
+                            <div class="flex flex-col">
+                                <label class="${labelClasses}">ReadCapacityUnits</label>
+                                <input required type="number" id="secondary-index-${index}-ReadCapacityUnits" name="secondary-index-${index}-ReadCapacityUnits" class="${inputClasses}" value="3" />
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="WriteCapacityUnits">WriteCapacityUnits</label>
-                                <input required type="number" id="secondary-index-${index}-WriteCapacityUnits" name="secondary-index-${index}-WriteCapacityUnits" class="form-control"
-                                    value="3" />
+                            <div class="flex flex-col">
+                                <label class="${labelClasses}">WriteCapacityUnits</label>
+                                <input required type="number" id="secondary-index-${index}-WriteCapacityUnits" name="secondary-index-${index}-WriteCapacityUnits" class="${inputClasses}" value="3" />
                             </div>
                         </div>
                     </div>
-                <hr>
-            </div>
-            `
-        })
+                </div>
+            `;
 
-        function onSecondaryIndexTypeSelect(event, index) {
-            if (event.value === 'local') {
-                $(`#secondary-index-${index}-WriteCapacityUnits`).prop('disabled', true)
-                $(`#secondary-index-${index}-ReadCapacityUnits`).prop('disabled', true)
-            } else {
-                $(`#secondary-index-${index}-WriteCapacityUnits`).prop('disabled', false)
-                $(`#secondary-index-${index}-ReadCapacityUnits`).prop('disabled', false)
-            }
-        }
+            window.onSecondaryIndexTypeSelect = function(el, index) {
+                const isDisabled = el.value === 'local';
+                const writeInput = document.querySelector(`#secondary-index-${index}-WriteCapacityUnits`);
+                const readInput = document.querySelector(`#secondary-index-${index}-ReadCapacityUnits`);
+                writeInput.disabled = isDisabled;
+                writeInput.style.opacity = isDisabled ? '0.5' : '1';
+                readInput.disabled = isDisabled;
+                readInput.style.opacity = isDisabled ? '0.5' : '1';
+            };
 
-        function removeIndex(id) {
-            $(`#${id}`).remove()
-        }
+            window.removeIndex = function(id) {
+                document.querySelector(`#${id}`).remove();
+            };
+        });
     </script>
-    <%- include('partials/head-tail') %>
 </head>
 
-<body class="container">
-    <header>
-        <%
-          const breadcrumb = [
-            {
-              href: '/',
-              text: 'Tables',
-            },
-            {
-              active: true,
-              text: 'Create Table',
-            },
-          ]
-        %>
-        <%- include('partials/breadcrumb', { breadcrumb }) %>
+<body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950">
+
+    <%- include('partials/header', {
+        breadcrumb: [
+            { text: 'Tables', url: '/' },
+            { text: 'New Table', active: true }
+        ],
+        tabs: [],
+        actions: `
+            <a href="/" class="text-xs font-bold text-slate-400 hover:text-white mono px-3 py-1.5 transition-colors">CANCEL</a>
+            <button form="form" type="submit" class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all">
+                SUBMIT
+            </button>
+        `
+    }) %>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 mt-[72px] text-slate-900 dark:text-slate-100">
         <%- include('partials/error-container') %>
-    </header>
-    <main>
-        <form id="form" method="post">
-            <div class="container">
-                <h1>Create Table</h1>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label for="TableName">Table Name</label>
-                            <input required type="text" id="TableName" name="TableName" class="form-control" autofocus />
-                        </div>
+
+        <form id="form" method="post" class="space-y-8">
+            <!-- Table Settings Card -->
+            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden mb-6">
+                <div class="px-4 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="database" class="w-3.5 h-3.5 text-blue-500"></i>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mono">Base Configuration</span>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="HashAttributeName">Hash Attribute Name</label>
-                            <input required type="text" id="HashAttributeName" name="HashAttributeName" class="form-control" />
-                        </div>
+                <div class="p-8 flex flex-col space-y-8">
+                    <!-- Table Name row -->
+                    <div class="flex flex-col">
+                        <label for="TableName" class="label">Table Name</label>
+                        <input required type="text" id="TableName" name="TableName" class="input" placeholder="e.g. local-entities" autofocus />
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Hash Attribute Type</label>
-                            <select required name="HashAttributeType" class="form-control">
+
+                    <!-- Hash Attribute row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="flex flex-col">
+                            <label class="label">Hash Attribute Name</label>
+                            <input required type="text" id="HashAttributeName" name="HashAttributeName" class="input" placeholder="pk" />
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="label">Hash Attribute Type</label>
+                            <select required name="HashAttributeType" class="input">
                                 <option value="S">String</option>
                                 <option value="N">Number</option>
                                 <option value="B">Binary</option>
                             </select>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="HashAttributeName">Range Attribute Name (Optional)</label>
-                            <input type="text" id="RangeAttributeName" name="RangeAttributeName" class="form-control" />
+
+                    <!-- Range Attribute row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="flex flex-col">
+                            <label class="label">Range Attribute Name (Optional)</label>
+                            <input type="text" id="RangeAttributeName" name="RangeAttributeName" class="input" placeholder="sk" />
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Range Attribute Type (Optional)</label>
-                            <select name="RangeAttributeType" class="form-control">
-                                <option></option>
+                        <div class="flex flex-col">
+                            <label class="label">Range Attribute Type (Optional)</label>
+                            <select name="RangeAttributeType" class="input">
+                                <option value=""></option>
                                 <option value="S">String</option>
                                 <option value="N">Number</option>
                                 <option value="B">Binary</option>
                             </select>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="ReadCapacityUnits">ReadCapacityUnits</label>
-                            <input required type="number" id="ReadCapacityUnits" name="ReadCapacityUnits" class="form-control"
-                                value="3" />
+
+                    <!-- Capacity row -->
+                    <div class="pt-8 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="flex flex-col">
+                            <label for="ReadCapacityUnits" class="label">ReadCapacityUnits</label>
+                            <input required type="number" id="ReadCapacityUnits" name="ReadCapacityUnits" class="input" value="3" />
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="WriteCapacityUnits">WriteCapacityUnits</label>
-                            <input required type="number" id="WriteCapacityUnits" name="WriteCapacityUnits" class="form-control"
-                                value="3" />
+                        <div class="flex flex-col">
+                            <label for="WriteCapacityUnits" class="label">WriteCapacityUnits</label>
+                            <input required type="number" id="WriteCapacityUnits" name="WriteCapacityUnits" class="input" value="3" />
                         </div>
                     </div>
                 </div>
-                <hr>
-                <div class="row">
-                    <div class="col">
-                        <h3>Secondary Indexes</h3>
+            </div>
+
+            <!-- Secondary Indexes Section -->
+            <div>
+                <div class="sticky top-0 z-30 bg-[#f1f5f9] dark:bg-[#0f172a] py-4 transition-colors">
+                    <div class="flex items-center space-x-2 text-slate-500 dark:text-slate-400 px-1">
+                        <i data-lucide="list-tree" class="w-4 h-4"></i>
+                        <h2 class="text-xs font-bold uppercase tracking-widest mono">Secondary Indexes</h2>
                     </div>
                 </div>
-                <div class="secondary-indexes row"></div>
-                <div class="row">
-                    <div class="col">
-                        <button class="btn btn-success" id="new-index">New Secondary Index</button>
-                    </div>
+
+                <div class="secondary-indexes flex flex-col space-y-4 mt-4">
+                    <!-- Dynamically added indexes -->
                 </div>
-                <hr>
-                <div class="row">
-                    <div class="col">
-                        <button id="saveButton" type="submit" class="btn btn-primary">Submit</button>
-                    </div>
+
+                <div>
+                    <button type="button" id="new-index" class="inline-flex items-center px-4 py-2 rounded bg-slate-200 dark:bg-slate-700 hover:bg-blue-600 hover:text-white text-[10px] font-bold mono transition-all">
+                        <i data-lucide="plus" class="w-3 h-3 mr-1"></i>
+                        ADD_INDEX
+                    </button>
                 </div>
+            </div>
+            
+            <div class="pt-10 flex justify-end">
+                <button form="form" type="submit" class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all">
+                    SUBMIT
+                </button>
             </div>
         </form>
     </main>

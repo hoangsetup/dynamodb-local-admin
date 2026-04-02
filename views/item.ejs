@@ -1,138 +1,154 @@
 <!DOCTYPE html>
-<html lang='en' data-theme="<%= theme %>">
+<html lang="en" class="h-full" data-theme="<%= theme %>">
+
 <head>
-  <%- include('partials/head') %>
-  <%- include('partials/ace-deps') %>
-  <%- include('partials/bootstrap-deps') %>
-  <%- include('partials/head-tail') %>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= Table.TableName %> | Item Detail | DynamoDB</title>
+    <%- include('partials/head') %>
+    <%- include('partials/ace-deps') %>
+    <%- include('partials/head-tail') %>
 </head>
-<body class='container-fluid d-flex flex-column'>
-  <header>
+
+<body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950">
+
     <%
-      const breadcrumb = [
-        {
-          href: '/',
-          text: 'Tables',
-        },
-        {
-          href: `/tables/${encodeURIComponent(TableName)}`,
-          text: Table.TableName,
-          badge: Table.ItemCount,
-        },
-      ]
-
-      if (Item.id) {
-        breadcrumb.push({ text: Item.id })
-      } else {
-        breadcrumb.push({ text: 'Item' })
-      }
+        const deleteButton = !isNew ? `
+            <button type="button" onclick="handleDeleteClick(event)" class="inline-flex items-center px-3 py-1.5 rounded bg-slate-800 hover:bg-red-600 dark:bg-slate-700 dark:hover:bg-red-600 text-slate-300 hover:text-white dark:text-slate-300 dark:hover:text-white text-xs font-bold border border-slate-700 dark:border-slate-600 transition-all">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1.5"></i>
+                DELETE
+            </button>
+        ` : '';
     %>
-    <%- include('partials/breadcrumb', { breadcrumb }) %>
-    <%- include('partials/error-container') %>
-  </header>
+    <%- include('partials/header', {
+        breadcrumb: [
+            { text: 'Tables', url: '/' },
+            { text: Table.TableName, url: `/tables/${encodeURIComponent(TableName)}` },
+            { text: isNew ? 'New Item' : (Item.id || 'Item'), active: true }
+        ],
+        tabs: [],
+        actions: `
+            <button type="button" id="saveButton" onclick="handleEditClick()" class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all">
+                <i data-lucide="save" class="w-3.5 h-3.5 mr-1.5"></i>
+                SAVE CHANGES
+            </button>
+            ${deleteButton}
+        `
+    }) %>
 
-  <main class='flex-fill d-flex flex-column'>
-    <nav>
-      <script>
-      function handleEditClick () {
-        const saveButton = document.getElementById('saveButton')
+    <main class="flex-grow flex flex-col mx-auto w-full px-4 py-4 mt-[72px]">
+        <%- include('partials/error-container') %>
 
-        fetch(document.location.pathname, {
-          method: 'put',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: editor.getValue()
-        }).then(async (response) => {
-          if (response.ok) {
-            return response.json()
-          } else {
-            const responseText = await response.text()
-            throw new Error(JSON.parse(responseText).message)
-          }
-        }).then((json) => {
-          if (document.location.pathname.endsWith('/add-item')) {
-            const urlPart1 = document.location.pathname.replace('/add-item', '')
-            const param = encodeURIComponent(Object.values(json).join(','))
+        <!-- Editor Toolbar -->
+        <div class="flex items-center justify-between mb-2 px-1">
+            <div class="flex items-center space-x-2">
+                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">JSON Schema Editor</span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded mono font-medium">Valid JSON Required</span>
+            </div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-500 mono italic">
+                Press <kbd class="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-sans not-italic">Cmd/Ctrl + S</kbd> to save
+            </div>
+        </div>
 
-            window.location = `${urlPart1}/items/${param}`
-            return
-          }
-          editor.setValue(JSON.stringify(json, null, 2));
-          editor.focus()
-          saveButton.classList.remove('btn-primary')
-          saveButton.classList.add('btn-success')
-          setTimeout(() => {
-            saveButton.classList.add('btn-primary')
-            saveButton.classList.remove('btn-success')
-          }, 2000)
-        }).catch((error) => {
-          editor.focus()
-          saveButton.classList.remove('btn-primary')
-          saveButton.classList.add('btn-warning')
-          setTimeout(() => {
-            saveButton.classList.add('btn-primary')
-            saveButton.classList.remove('btn-warning')
-          }, 2000)
-          handleError(error.message)
-        })
-      }
-      </script>
-      <button
-        class='btn btn-primary'
-        id='saveButton'
-        onclick='handleEditClick()'
-        type='button'
-      >
-        Save
-      </button>
+        <!-- Ace Editor Container -->
+        <div class="flex-grow relative min-h-[500px] mb-4">
+            <div id="documentArea"><%= JSON.stringify(Item, null, 2) %></div>
+        </div>
+    </main>
 
-      <script>
-      function handleDeleteClick (event) {
-        event.preventDefault()
-        fetch(document.location.pathname, {
-          method: 'delete'
-        }).then(async (response) => {
-          if (response.ok) {
-            window.location = `/tables/<%= encodeURIComponent(TableName) %>`
-          } else {
-            const responseText = await response.text()
-            throw new Error(JSON.parse(responseText).message)
-          }
-        }).catch((error) => {
-          handleError(error.message)
-        })
-      }
-      </script>
-      <% if (!isNew) { %>
-        <button
-          class='btn btn-danger'
-          onclick='handleDeleteClick(event)'
-          type='button'
-        >
-          Delete
-        </button>
-      <% } %>
-    </nav>
-    <article
-        id="documentWrapper"
-        class="flex-fill"
-        style='position: relative; margin-top: 16px; width: 100%; height: 100%'>
-      <div id='documentTextarea' style='
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;'><%= JSON.stringify(Item, null, 2) %></div>
-      <script>
-      const editor = ace.edit("documentTextarea")
-      editor.resize()
-      editor.getSession().setMode("ace/mode/json")
-      editor.setTheme("ace/theme/monokai")
-      editor.setFontSize(14)
-      editor.focus();
-      </script>
-    </article>
-  </main>
+    <script>
+        lucide.createIcons();
+        
+        const editor = ace.edit("documentArea");
+        editor.resize();
+        editor.getSession().setMode("ace/mode/json");
+        editor.setTheme("ace/theme/monokai");
+        editor.setFontSize(16);
+        editor.setOptions({
+            showPrintMargin: false,
+            highlightActiveLine: true,
+            useSoftTabs: true,
+            tabSize: 2,
+        });
+        editor.focus();
+
+        // Keyboard Shortcut: Cmd/Ctrl + S
+        editor.commands.addCommand({
+            name: 'save',
+            bindKey: {win: 'Ctrl-S',  mac: 'Command-S'},
+            exec: function(editor) {
+                handleEditClick();
+            },
+            readOnly: false
+        });
+
+        function handleEditClick() {
+            const saveButton = document.getElementById('saveButton');
+            const originalContent = saveButton.innerHTML;
+
+            fetch(document.location.pathname, {
+                method: 'put',
+                headers: { 'Content-Type': 'application/json' },
+                body: editor.getValue()
+            }).then(async (response) => {
+                if (response.ok) return response.json();
+                const responseText = await response.text();
+                throw new Error(JSON.parse(responseText).message);
+            }).then((json) => {
+                if (document.location.pathname.endsWith('/add-item')) {
+                    const urlPart1 = document.location.pathname.replace('/add-item', '');
+                    const param = encodeURIComponent(Object.values(json).join(','));
+                    window.location = `${urlPart1}/items/${param}`;
+                    return;
+                }
+                
+                editor.setValue(JSON.stringify(json, null, 2));
+                editor.clearSelection();
+                editor.focus();
+                
+                // Success State
+                saveButton.classList.replace('bg-blue-600', 'bg-green-600');
+                saveButton.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 mr-2"></i> SAVED`;
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    saveButton.classList.replace('bg-green-600', 'bg-blue-600');
+                    saveButton.innerHTML = originalContent;
+                    lucide.createIcons();
+                }, 2000);
+            }).catch((error) => {
+                editor.focus();
+                saveButton.classList.replace('bg-blue-600', 'bg-amber-600');
+                saveButton.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-2);</i> ERROR`;
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    saveButton.classList.replace('bg-amber-600', 'bg-blue-600');
+                    saveButton.innerHTML = originalContent;
+                    lucide.createIcons();
+                }, 3000);
+                handleError(error.message);
+            });
+        }
+
+        function handleDeleteClick(event) {
+            event.preventDefault();
+            if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return;
+
+            fetch(document.location.pathname, {
+                method: 'delete'
+            }).then(async (response) => {
+                if (response.ok) {
+                    window.location = `/tables/<%= encodeURIComponent(TableName) %>`;
+                } else {
+                    const responseText = await response.text();
+                    throw new Error(JSON.parse(responseText).message);
+                }
+            }).catch((error) => {
+                handleError(error.message);
+            });
+        }
+    </script>
 </body>
+
 </html>
