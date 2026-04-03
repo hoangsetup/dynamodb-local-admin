@@ -3,6 +3,10 @@
 @import "tailwindcss";
 
 @layer base {
+  html {
+    @apply scheme-light dark:scheme-dark;
+  }
+
   body {
     font-family: 'Inter', sans-serif;
     background-color: #f1f5f9;
@@ -84,6 +88,6 @@
   }
 
   #documentArea {
-    @apply !absolute !inset-0 shadow-sm rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700;
+    @apply absolute! inset-0! shadow-sm rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700;
   }
 }
