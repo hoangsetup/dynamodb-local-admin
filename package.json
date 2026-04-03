@@ -57,7 +57,7 @@
     "errorhandler": "^1.5.1",
     "express": "^4.21.1",
     "lodash.pickby": "^4.6.0",
-    "open": "^10.1.0"
+    "open": "^11.0.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.1",
