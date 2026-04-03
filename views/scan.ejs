@@ -8,7 +8,7 @@
     <%- include('partials/head') %>
     <%- include('partials/head-tail') %>
     <script src='/assets/vendor/json-formatter/json-formatter.js'></script>
-    
+
     <style>
         .preformatted {
             font-family: 'JetBrains Mono', monospace;
@@ -48,7 +48,7 @@
                     <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">Filter Results</span>
                 </div>
             </div>
-            
+
             <form id="form" method="get" action="/tables/<%= encodeURIComponent(Table.TableName) %>" class="p-4">
                 <datalist id="attributes">
                     <% for (let AttributeDefinition of Table.AttributeDefinitions) { %>
@@ -67,7 +67,7 @@
                     <div class="flex-grow min-w-[200px]">
                         <label class="block text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 mono">Index / Selection</label>
                         <select name="queryableSelection" class="select" <% if (!Table.GlobalSecondaryIndexes) { %> disabled <% } %>>
-                            <option value="table" 
+                            <option value="table"
                                 <% Table.KeySchema.forEach(keySchemaItem => { %> data-key-<%= keySchemaItem.KeyType.toLowerCase() %>="<%= keySchemaItem.AttributeName %>" <% }) %>
                                 <% if (query.queryableSelection === 'table') { %> selected <% } %>>
                                 [Table] <%= Table.TableName %>
@@ -180,6 +180,14 @@
         let currentSortColumn = null;
         let currentSortDirection = 'asc';
         let tableData = null;
+
+        // Get key schema from Table
+        const keySchema = {
+            <% const hashKey = Table.KeySchema?.find(k => k.KeyType === 'HASH'); %>
+            <% const rangeKey = Table.KeySchema?.find(k => k.KeyType === 'RANGE'); %>
+            hashKey: '<%= hashKey?.AttributeName || '' %>',
+            rangeKey: '<%= rangeKey?.AttributeName || '' %>'
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -429,21 +437,24 @@
             function renderItems(data) {
                 tableData = data;
                 const actionsRow = document.querySelector('#actions-row');
-                actionsRow.insertAdjacentHTML('beforeend', data.uniqueKeys.map((key, index) =>
-                    index === 0
+                actionsRow.insertAdjacentHTML('beforeend', data.uniqueKeys.map((key, index) => {
+                    const keyLabel = key === keySchema.hashKey ? ' <span class="italic text-slate-500 dark:text-slate-600">(PK)</span>'
+                                   : key === keySchema.rangeKey ? ' <span class="italic text-slate-500 dark:text-slate-600">(SK)</span>'
+                                   : '';
+                    return index === 0
                         ? `<th scope="col" class="max-w-[50ch] sticky top-0 left-0 z-20 px-4 py-3 text-[11px] font-bold text-slate-400 mono border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 border-r border-r-slate-200 dark:border-r-slate-700 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="sortTableByColumn('${key}')">
                             <div class="flex items-center justify-between gap-2">
-                                <span>${key}</span>
+                                <span>${key}${keyLabel}</span>
                                 <span class="sort-icon text-slate-400"><i data-lucide="arrow-up-down" class="w-3 h-3"></i></span>
                             </div>
                           </th>`
                         : `<th scope="col" class="sticky top-0 z-10 px-4 py-3 text-[11px] font-bold text-slate-400 mono border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="sortTableByColumn('${key}')">
                             <div class="flex items-center justify-between gap-2">
-                                <span>${key}</span>
+                                <span>${key}${keyLabel}</span>
                                 <span class="sort-icon text-slate-400"><i data-lucide="arrow-up-down" class="w-3 h-3"></i></span>
                             </div>
                           </th>`
-                ).join(''));
+                }).join(''));
                 lucide.createIcons();
 
                 if (data.Items.length) {
