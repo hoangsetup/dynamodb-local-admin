@@ -1,9 +1,21 @@
+<%
+/** @typedef {import('@aws-sdk/client-dynamodb').TableDescription} TableDescription */
+/**
+ * @name data
+ * @type {TableDescription[]}
+ */
+/**
+ * @name theme
+ * @type {"dark" | "light"}
+ */
+%>
 <!DOCTYPE html>
 <html lang="en" class="h-full" data-theme="<%= theme %>">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tables | DynamoDB</title>
     <%- include('partials/head') %>
 </head>
 
@@ -30,7 +42,7 @@
         `
     }) %>
 
-    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 mt-[72px] text-slate-900 dark:text-slate-100">
+    <main class="grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 mt-18 text-slate-900 dark:text-slate-100">
 
         <!-- Filter Input -->
         <div class="mb-4">
@@ -40,7 +52,7 @@
                 </div>
                 <input type="search" id="filter-input"
                 autocomplete="off"
-                    class="block w-full pl-10 pr-3 py-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all
+                    class="block w-full pl-10 pr-3 py-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all
                     placeholder:italic placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     placeholder="Find tables">
             </div>
@@ -73,7 +85,7 @@
 
             <!-- Table Rows -->
             <div id="table-list" class="divide-y divide-slate-100 dark:divide-slate-700">
-                <% for(var i = 0; i < data.length; i++) { %>
+                <% for(let i = 0; i < data.length; i++) { %>
                 <div class="grid grid-cols-12 gap-4 px-4 py-3 items-center group transition-all duration-150 border-l-3 border-l-transparent hover:bg-slate-50 hover:border-l-blue-500 dark:hover:bg-slate-700 dark:hover:border-l-blue-400" data-table-name="<%= data[i].TableName %>">
                     <div class="col-span-4 flex items-center min-w-0">
                         <div class="w-2 h-2 rounded-full bg-green-500 mr-3 shrink-0"></div>
@@ -134,8 +146,10 @@
         <% if (data.length === 0) { %>
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-t-0 rounded-b-lg p-12 text-center">
             <i data-lucide="box" class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4"></i>
-            <h3 class="text-slate-900 dark:text-slate-100 font-bold">Database Empty</h3>
-            <p class="text-slate-500 dark:text-slate-400 text-xs mono mt-1">NO_RELATIONS_FOUND_IN_SCHEMA</p>
+            <h3 class="text-slate-900 dark:text-slate-100 font-bold">Empty Schema</h3>
+            <p class="text-slate-500 dark:text-slate-400 text-xs mono mt-1">
+                No DynamoDB resources were detected in the current environment.
+            </p>
         </div>
         <% } %>
 
@@ -159,6 +173,10 @@
                 const words = query.split(' ').filter(w => w);
                 const items = document.querySelectorAll('#table-list > div');
                 let visibleCount = 0;
+
+                if (items.length === 0) {
+                  return;
+                }
 
                 items.forEach(el => {
                     const name = el.dataset.tableName.toLowerCase();
