@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= Table.TableName %> | Get Item | DynamoDB</title>
     <%- include('partials/head') %>
-    <%- include('partials/head-tail') %>
-
 </head>
 
 <body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950">
@@ -92,10 +90,10 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             const values = [];
-            
+
             if (formData.has('hash')) values.push(formData.get('hash'));
             if (formData.has('range')) values.push(formData.get('range'));
-            
+
             const param = encodeURIComponent(values.join(','));
             window.location.href = `/tables/<%= encodeURIComponent(Table.TableName) %>/items/${param}`;
         });

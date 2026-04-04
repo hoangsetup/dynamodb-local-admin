@@ -7,7 +7,6 @@
     <title><%= Table.TableName %> | Meta | DynamoDB</title>
     <%- include('partials/head') %>
     <%- include('partials/ace-deps') %>
-    <%- include('partials/head-tail') %>
 </head>
 
 <body class="min-h-full flex flex-col px-0 py-0 bg-slate-50 dark:bg-slate-950">
@@ -54,7 +53,7 @@
 
     <script>
         lucide.createIcons();
-        
+
         const editor = ace.edit("documentArea");
         editor.resize();
         editor.getSession().setMode("ace/mode/json");

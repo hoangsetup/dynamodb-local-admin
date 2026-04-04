@@ -5,6 +5,7 @@
 @layer base {
   html {
     @apply scheme-light dark:scheme-dark;
+    scrollbar-gutter: stable;
   }
 
   body {

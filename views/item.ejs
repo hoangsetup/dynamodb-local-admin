@@ -7,7 +7,6 @@
     <title><%= Table.TableName %> | Item Detail | DynamoDB</title>
     <%- include('partials/head') %>
     <%- include('partials/ace-deps') %>
-    <%- include('partials/head-tail') %>
 </head>
 
 <body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950">
@@ -58,7 +57,7 @@
 
     <script>
         lucide.createIcons();
-        
+
         const editor = ace.edit("documentArea");
         editor.resize();
         editor.getSession().setMode("ace/mode/json");
@@ -101,16 +100,16 @@
                     window.location = `${urlPart1}/items/${param}`;
                     return;
                 }
-                
+
                 editor.setValue(JSON.stringify(json, null, 2));
                 editor.clearSelection();
                 editor.focus();
-                
+
                 // Success State
                 saveButton.classList.replace('bg-blue-600', 'bg-green-600');
                 saveButton.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 mr-2"></i> SAVED`;
                 lucide.createIcons();
-                
+
                 setTimeout(() => {
                     saveButton.classList.replace('bg-green-600', 'bg-blue-600');
                     saveButton.innerHTML = originalContent;
@@ -121,7 +120,7 @@
                 saveButton.classList.replace('bg-blue-600', 'bg-amber-600');
                 saveButton.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-2);</i> ERROR`;
                 lucide.createIcons();
-                
+
                 setTimeout(() => {
                     saveButton.classList.replace('bg-amber-600', 'bg-blue-600');
                     saveButton.innerHTML = originalContent;
