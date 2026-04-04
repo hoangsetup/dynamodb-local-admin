@@ -1,3 +1,26 @@
+<%
+/** @typedef {import('@aws-sdk/client-dynamodb').TableDescription} TableDescription */
+/**
+ * @name query
+ * @type {{[key: string]: string }}
+ */
+/**
+ * @name pageNum
+ * @type {number}
+ */
+/**
+ * @name operators
+ * @type {Object<string, string>}
+ */
+/**
+ * @name attributeTypes
+ * @type {Object<string, string>}
+ */
+/**
+ * @name Table
+ * @type {TableDescription}
+ */
+%>
 <!DOCTYPE html>
 <html lang="en" class="h-full" data-theme="<%= theme %>">
 
@@ -7,13 +30,6 @@
     <title><%= Table.TableName %> | Items | DynamoDB</title>
     <%- include('partials/head') %>
     <script src='/assets/vendor/json-formatter/json-formatter.js'></script>
-
-    <style>
-        .preformatted {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-        }
-    </style>
 </head>
 
 <body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950">
@@ -36,7 +52,7 @@
         `
     }) %>
 
-    <main class="flex-grow mx-auto w-full px-4 py-4 mt-[72px]">
+    <main class="grow mx-auto w-full px-4 py-4 mt-18">
         <%- include('partials/error-container') %>
 
         <!-- Filter/Search Controls Card - COMPACT VERSION -->
@@ -44,7 +60,7 @@
             <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="toggleFilterPanel()">
                 <div class="flex items-center space-x-2">
                     <i data-lucide="filter" class="w-3 h-3 text-blue-500 dark:text-blue-400"></i>
-                    <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">Filter Results</span>
+                    <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">Scan / Query</span>
                 </div>
                 <i id="filter-toggle-icon" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 dark:text-slate-500 transition-transform"></i>
             </div>
@@ -52,7 +68,7 @@
             <form id="form" method="get" action="/tables/<%= encodeURIComponent(Table.TableName) %>" class="p-4 hidden">
                 <datalist id="attributes">
                     <% for (let AttributeDefinition of Table.AttributeDefinitions) { %>
-                        <option value="<%= AttributeDefinition.AttributeName %>" />
+                        <option value="<%= AttributeDefinition.AttributeName %>"></option>
                     <% } %>
                 </datalist>
 
@@ -64,7 +80,7 @@
                             <option value="query" <% if (query.operationType === 'query') { %> selected <% } %>>Query</option>
                         </select>
                     </div>
-                    <div class="flex-grow min-w-[200px]">
+                    <div class="grow min-w-50">
                         <label class="block text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1 mono">Index / Selection</label>
                         <select name="queryableSelection" class="select" <% if (!Table.GlobalSecondaryIndexes) { %> disabled <% } %>>
                             <option value="table"
@@ -124,7 +140,7 @@
                             <i data-lucide="rotate-ccw" class="w-3 h-3 mr-1.5"></i> RESET
                         </a>
                     </div>
-                    <div class="pagination-container hidden flex items-center space-x-3">
+                    <div class="pagination-container flex items-center space-x-3">
                          <div class="flex items-center space-x-2">
                             <label class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0 mono">Limit</label>
                             <select name="pageSize" class="select">
@@ -404,7 +420,6 @@
                         }
                         const value = item[column];
                         let wrapper = document.createElement('div');
-                        wrapper.className = 'preformatted';
                         let dateTooltip = null;
 
                         if (Number.isInteger(value)) {
@@ -418,7 +433,7 @@
                             }
                             if (dateValue) {
                                 dateTooltip = dateValue;
-                                wrapper.className = 'preformatted relative group/tooltip';
+                                wrapper.className = 'relative group/tooltip';
                             }
                         }
 
@@ -467,13 +482,13 @@
                                    : key === keySchema.rangeKey ? ' <span class="italic text-slate-500 dark:text-slate-600">(SK)</span>'
                                    : '';
                     return index === 0
-                        ? `<th scope="col" class="max-w-[50ch] sticky top-0 left-0 z-20 px-4 py-3 text-[11px] font-bold text-slate-400 mono border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 border-r border-r-slate-200 dark:border-r-slate-700 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="sortTableByColumn('${key}')">
+                        ? `<th scope="col" class="max-w-[50ch] sticky top-0 left-0 z-20 px-4 py-3 text-[14px] font-bold text-slate-400 mono border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 border-r border-r-slate-200 dark:border-r-slate-700 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="sortTableByColumn('${key}')">
                             <div class="flex items-center justify-between gap-2">
                                 <span>${key}${keyLabel}</span>
                                 <span class="sort-icon text-slate-400"><i data-lucide="arrow-up-down" class="w-3 h-3"></i></span>
                             </div>
                           </th>`
-                        : `<th scope="col" class="sticky top-0 z-10 px-4 py-3 text-[11px] font-bold text-slate-400 mono border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="sortTableByColumn('${key}')">
+                        : `<th scope="col" class="sticky top-0 z-10 px-4 py-3 text-[14px] font-bold text-slate-400 mono border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="sortTableByColumn('${key}')">
                             <div class="flex items-center justify-between gap-2">
                                 <span>${key}${keyLabel}</span>
                                 <span class="sort-icon text-slate-400"><i data-lucide="arrow-up-down" class="w-3 h-3"></i></span>
