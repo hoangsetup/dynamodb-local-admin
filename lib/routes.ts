@@ -443,8 +443,15 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
         res.json(response.Item);
     }));
 
-    app.use(((error, _req, res, _next) => {
+    app.use(((error, req, res, _next) => {
         console.info(error.stack);
-        res.status(500).json({ message: error.message });
+        if (req.xhr) {
+            res.status(500).json({ message: error.message });
+        } else {
+            res.status(500).render('error', {
+                error,
+                req,
+            });
+        }
     }) as ErrorRequestHandler);
 }

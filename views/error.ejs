@@ -1,0 +1,129 @@
+<%
+/** @typedef {import('express').Request} Request */
+/**
+ * @name error
+ * @type {Error}
+ */
+/**
+ * @name req
+ * @type {Request}
+ */
+%>
+<!DOCTYPE html>
+<html lang="en" class="h-full" data-theme="<%= typeof theme !== 'undefined' ? theme : 'light' %>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error | DynamoDB Admin</title>
+    <%- include('partials/head') %>
+</head>
+<body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950">
+
+    <%- include('partials/header', {
+        breadcrumb: [
+            { text: 'Tables', url: '/' },
+            { text: 'Error', active: true, icon: 'alert-triangle' }
+        ],
+        tabs: [],
+        actions: ''
+    }) %>
+
+    <main class="grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 mt-18 text-slate-900 dark:text-slate-100">
+
+        <!-- Error Detail Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
+            <!-- Alert Banner -->
+            <div class="bg-red-600 dark:bg-red-700 px-6 py-4 flex items-center justify-between border-b border-red-700 dark:border-red-800">
+                <span class="text-white font-semibold flex items-center gap-2">
+                    <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+                    <%= error.message %>
+                </span>
+                <button onclick="copyError(event)"
+                        class="text-xs bg-red-700 dark:bg-red-800 hover:bg-red-800 dark:hover:bg-red-900 text-white px-3 py-1.5 rounded transition-colors uppercase font-bold mono">
+                    Copy Details
+                </button>
+            </div>
+
+            <div class="p-6">
+                <!-- Stack Trace -->
+                <div class="mb-6">
+                    <h2 class="label-sm mb-2 flex items-center gap-2">
+                        <i data-lucide="layers" class="w-3 h-3"></i>
+                        Stack Trace
+                    </h2>
+                    <div class="bg-slate-900 dark:bg-slate-950 rounded-lg p-4 overflow-x-auto border border-slate-700">
+                        <pre class="mono text-sm text-slate-300 dark:text-slate-400 leading-relaxed"><span class="text-red-400"><%= error.stack %></span>
+<span class="text-slate-500 dark:text-slate-600 italic">-- End of stack trace --</span></pre>
+                    </div>
+                </div>
+
+                <!-- Environment/Request Info -->
+                <div class="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <h3 class="label-sm mb-3 flex items-center gap-2">
+                        <i data-lucide="info" class="w-3 h-3"></i>
+                        Request Context
+                    </h3>
+                    <ul class="text-sm space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="font-semibold text-slate-700 dark:text-slate-300 min-w-15">Method:</span>
+                            <span class="mono text-blue-600 dark:text-blue-400 uppercase font-bold"><%= req.method %></span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="font-semibold text-slate-700 dark:text-slate-300 min-w-15">Path:</span>
+                            <span class="mono break-all text-slate-600 dark:text-slate-400"><%= req.url %></span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Action Footer -->
+            <div class="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-6 flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="/"
+                   class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all font-semibold text-sm">
+                    <i data-lucide="home" class="w-4 h-4 mr-2"></i>
+                    Return Home
+                </a>
+                <button onclick="window.location.reload()"
+                        class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all font-semibold text-sm">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i>
+                    Retry
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /* global lucide */
+        function copyError(event) {
+            const errorText = `<%= error.message %>\n\n<%= error.stack %>`;
+
+            // Use modern Clipboard API with fallback
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(errorText).then(() => {
+                    const btn = event.target;
+                    const originalText = btn.innerText;
+                    btn.innerText = 'COPIED!';
+                    setTimeout(() => btn.innerText = originalText, 2000);
+                });
+            } else {
+                // Fallback for older browsers
+                const el = document.createElement('textarea');
+                el.value = errorText;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+
+                const btn = event.target;
+                const originalText = btn.innerText;
+                btn.innerText = 'COPIED!';
+                setTimeout(() => btn.innerText = originalText, 2000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
