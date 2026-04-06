@@ -11,6 +11,22 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
 
+            // TTL checkbox toggle
+            const ttlCheckbox = document.querySelector('#EnableTTL');
+            const ttlContainer = document.querySelector('#ttl-attribute-container');
+            const ttlInput = document.querySelector('#TTLAttributeName');
+
+            ttlCheckbox.addEventListener('change', () => {
+                if (ttlCheckbox.checked) {
+                    ttlContainer.classList.remove('hidden');
+                    ttlInput.required = true;
+                } else {
+                    ttlContainer.classList.add('hidden');
+                    ttlInput.required = false;
+                    ttlInput.value = '';
+                }
+            });
+
             document.querySelector('#new-index').addEventListener('click', event => {
                 event.preventDefault();
                 document.querySelector('.secondary-indexes').insertAdjacentHTML('beforeend', Item({ index: secondaryIndexCount }));
@@ -56,7 +72,11 @@
                         ReadCapacityUnits: findFormInputValue(formValues, 'ReadCapacityUnits'),
                         WriteCapacityUnits: findFormInputValue(formValues, 'WriteCapacityUnits'),
                     },
-                    SecondaryIndexes: secondaryIndexes
+                    SecondaryIndexes: secondaryIndexes,
+                    TTL: {
+                        Enabled: formData.has('EnableTTL'),
+                        AttributeName: findFormInputValue(formValues, 'TTLAttributeName')
+                    }
                 };
 
                 try {
@@ -251,6 +271,19 @@
                         <div class="flex flex-col">
                             <label for="WriteCapacityUnits" class="label">WriteCapacityUnits</label>
                             <input required type="number" id="WriteCapacityUnits" name="WriteCapacityUnits" class="input" value="3" />
+                        </div>
+                    </div>
+
+                    <!-- TTL Configuration -->
+                    <div class="pt-8 border-t border-slate-100 dark:border-slate-700/50 space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" id="EnableTTL" name="EnableTTL" class="w-4 h-4 text-blue-600 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 rounded focus:ring-blue-500 focus:ring-2" />
+                            <label for="EnableTTL" class="label !mb-0">Enable Time To Live (TTL)</label>
+                        </div>
+                        <div id="ttl-attribute-container" class="hidden">
+                            <label for="TTLAttributeName" class="label">TTL Attribute Name</label>
+                            <input type="text" id="TTLAttributeName" name="TTLAttributeName" class="input" placeholder="e.g. expiresAt" />
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">The attribute name that stores the TTL timestamp (Unix epoch time in seconds)</p>
                         </div>
                     </div>
                 </div>

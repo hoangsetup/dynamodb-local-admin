@@ -1,5 +1,6 @@
 <%
 /** @typedef {import('@aws-sdk/client-dynamodb').TableDescription} TableDescription */
+/** @typedef {import('@aws-sdk/client-dynamodb').TimeToLiveDescription} TimeToLiveDescriptionType */
 /**
  * @name query
  * @type {{[key: string]: string }}
@@ -19,6 +20,10 @@
 /**
  * @name Table
  * @type {TableDescription}
+ */
+/**
+ * @name TimeToLiveDescription
+ * @type {TimeToLiveDescriptionType}
  */
 %>
 <!DOCTYPE html>
@@ -204,6 +209,8 @@
             hashKey: '<%= hashKey?.AttributeName || '' %>',
             rangeKey: '<%= rangeKey?.AttributeName || '' %>'
         };
+
+        const ttlAttributeName = '<%= TimeToLiveDescription.TimeToLiveStatus === 'ENABLED' ? TimeToLiveDescription.AttributeName : ''; %>';
 
         // Toggle filter panel
         function toggleFilterPanel() {
@@ -480,6 +487,7 @@
                 actionsRow.insertAdjacentHTML('beforeend', data.uniqueKeys.map((key, index) => {
                     const keyLabel = key === keySchema.hashKey ? ' <span class="italic text-slate-500 dark:text-slate-600">(PK)</span>'
                                    : key === keySchema.rangeKey ? ' <span class="italic text-slate-500 dark:text-slate-600">(SK)</span>'
+                                   : key === ttlAttributeName ? ' <span class="italic text-slate-500 dark:text-slate-600">(TTL)</span>'
                                    : '';
                     return index === 0
                         ? `<th scope="col" class="max-w-[50ch] sticky top-0 left-0 z-20 px-4 py-3 text-[14px] font-bold text-slate-400 mono border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 border-r border-r-slate-200 dark:border-r-slate-700 whitespace-nowrap cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="sortTableByColumn('${key}')">

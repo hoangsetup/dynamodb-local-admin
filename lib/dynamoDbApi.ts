@@ -3,6 +3,8 @@ import {
     DeleteTableCommand,
     DescribeTableCommand,
     ListTablesCommand,
+    UpdateTimeToLiveCommand,
+    DescribeTimeToLiveCommand,
     type CreateTableInput,
     type CreateTableOutput,
     type DeleteTableInput,
@@ -12,6 +14,10 @@ import {
     type ListTablesInput,
     type ListTablesOutput,
     type TableDescription,
+    type UpdateTimeToLiveInput,
+    type UpdateTimeToLiveOutput,
+    type DescribeTimeToLiveInput,
+    type DescribeTimeToLiveOutput,
 } from '@aws-sdk/client-dynamodb';
 import {
     BatchWriteCommand,
@@ -87,5 +93,13 @@ export class DynamoApiController {
 
     async putItem(input: PutCommandInput): Promise<PutCommandOutput> {
         return await this.docClient.send(new PutCommand(input));
+    }
+
+    async updateTimeToLive(input: UpdateTimeToLiveInput): Promise<UpdateTimeToLiveOutput> {
+        return await this.dynamodb.send(new UpdateTimeToLiveCommand(input));
+    }
+
+    async describeTimeToLive(input: DescribeTimeToLiveInput): Promise<DescribeTimeToLiveOutput> {
+        return await this.dynamodb.send(new DescribeTimeToLiveCommand(input));
     }
 }

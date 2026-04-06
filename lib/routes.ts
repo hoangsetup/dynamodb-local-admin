@@ -58,12 +58,18 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
         IndexType: 'global' | 'local';
     };
 
+    type TTLInput = {
+        Enabled: boolean;
+        AttributeName?: string;
+    };
+
     app.post(
         '/create-table',
         bodyParser.json({ limit: '500kb' }),
         asyncMiddleware(async(req, res) => {
             const { TableName, HashAttributeName, HashAttributeType, RangeAttributeName, RangeAttributeType, ReadCapacityUnits, WriteCapacityUnits } = req.body.TableDefinition as TableDefinitionInput;
             const SecondaryIndexes = req.body.SecondaryIndexes as SecondaryIndexesInput[];
+            const TTL = req.body.TTL as TTLInput;
 
             const attributeDefinitions: AttributeDefinition[] = [
                 {
@@ -166,6 +172,16 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
                 AttributeDefinitions: attributeDefinitions,
             });
 
+            if (TTL?.Enabled && TTL.AttributeName) {
+                await ddbApi.updateTimeToLive({
+                    TableName,
+                    TimeToLiveSpecification: {
+                        Enabled: true,
+                        AttributeName: TTL.AttributeName,
+                    },
+                });
+            }
+
             res.status(204).end();
         }),
     );
@@ -231,6 +247,7 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
         const pageNum = typeof req.query.pageNum === 'string' ? Number.parseInt(req.query.pageNum) : 1;
 
         const description = await ddbApi.describeTable({ TableName });
+        const { TimeToLiveDescription } = await ddbApi.describeTimeToLive({ TableName });
         const data = {
             query: req.query,
             pageNum,
@@ -248,6 +265,7 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
                 N: 'Number',
             },
             Table: description,
+            TimeToLiveDescription,
         };
         res.render('scan', data);
     }));
