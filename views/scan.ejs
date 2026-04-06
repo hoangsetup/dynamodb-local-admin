@@ -22,7 +22,7 @@
  */
 %>
 <!DOCTYPE html>
-<html lang="en" class="h-full" data-theme="<%= theme %>">
+<html lang="en" class="h-full">
 
 <head>
     <meta charset="UTF-8">
@@ -191,7 +191,7 @@
 
     <script>
         /* global JSONFormatter */
-        const JSONRender = value => new JSONFormatter.default(value, 1, { theme: '<%= theme %>' }).render()
+        const JSONRender = value => new JSONFormatter.default(value, 1, { theme: document.documentElement.getAttribute('data-theme') ?? 'light' }).render()
 
         let currentSortColumn = null;
         let currentSortDirection = 'asc';

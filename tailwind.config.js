@@ -4,7 +4,6 @@ module.exports = {
         './views/**/*.ejs',
         './lib/**/*.ts',
     ],
-    darkMode: ['class', '[data-theme="dark"]'],
     theme: {
         extend: {
             fontFamily: {

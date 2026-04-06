@@ -6,8 +6,32 @@
  * - breadcrumb: Array of { text, url?, icon?, active? }
  * - tabs: Optional array of { text, url, active }
  * - actions: HTML string for right section buttons/links
+ * - theme: Optional theme preference (from server-side)
  */
 %>
+<script>
+(function() {
+    const themePreference = '<%= theme ?? "system" %>';
+
+    function getSystemTheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    const effectiveTheme = themePreference === 'system' ? getSystemTheme() : themePreference;
+    document.documentElement.setAttribute('data-theme', effectiveTheme);
+
+    if (themePreference === 'system') {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+            if (event.matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        });
+    }
+})();
+</script>
+
 <header class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-md">
     <div class="mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-18">
@@ -56,7 +80,68 @@
             <!-- Right Section -->
             <div class="flex items-center space-x-2">
                 <%- actions %>
+
+                <!-- Theme Switcher -->
+                <div class="relative" id="theme-switcher">
+                    <button id="theme-toggle" class="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors" title="Change theme">
+                        <i data-lucide="<%= ({ 'light': 'sun', 'dark': 'moon', 'system': 'monitor' })[theme]; %>" class="w-4 h-4"></i>
+                    </button>
+                    <div id="theme-menu" class="hidden absolute right-0 mt-2 w-36 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden z-50">
+                        <button data-theme-setting="light" class="w-full px-4 text-slate-600 dark:text-slate-400 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2 transition-colors">
+                            <i data-lucide="sun" class="w-4 h-4"></i>
+                            <span>Light</span>
+                        </button>
+                        <button data-theme-setting="dark" class="w-full px-4 text-slate-600 dark:text-slate-400  py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2 transition-colors">
+                            <i data-lucide="moon" class="w-4 h-4"></i>
+                            <span>Dark</span>
+                        </button>
+                        <button data-theme-setting="system" class="w-full px-4 text-slate-600 dark:text-slate-400 py-2 text-left text-sm hover:bg-slate-100 flex items-center gap-2 transition-colors">
+                            <i data-lucide="monitor" class="w-4 h-4"></i>
+                            <span>System</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </header>
+
+<script>
+(function() {
+    function initThemeSwitcher() {
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeMenu = document.getElementById('theme-menu');
+        const themeButtons = document.querySelectorAll('#theme-menu button[data-theme-setting]');
+
+        // Toggle menu
+        themeToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            themeMenu.classList.toggle('hidden');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!themeMenu.contains(e.target) && !themeToggle.contains(e.target)) {
+                themeMenu.classList.add('hidden');
+            }
+        });
+
+        // Theme selection
+        themeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const value = btn.dataset.themeSetting;
+                document.cookie = `theme=${value}; path=/; max-age=31536000`;
+                console.log(value);
+                location.reload();
+            });
+        });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initThemeSwitcher);
+    } else {
+        initThemeSwitcher();
+    }
+})();
+</script>
