@@ -228,6 +228,49 @@
             lucide.createIcons();
         }
 
+        /**
+         * Detects epoch and returns a multi-line UTC/Local string.
+         * Format: MMMM DD, YYYY at HH:mm:ss AM/PM ZONE
+         */
+        const getEpochTooltipElement = (value) => {
+            // Basic validation: must be integer and at least 9 digits (seconds epoch)
+            if (!Number.isInteger(value) || value < 100_000_000) return null;
+
+            const isMs = value >= 10_000_000_000;
+            const date = new Date(isMs ? value : value * 1000);
+
+            if (isNaN(date.getTime())) return null;
+
+            // Configuration for the "Month DD, YYYY at HH:mm:ss AM/PM" format
+            const options = {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+
+            // Helper to format with specific timezone
+            const format = (tz) => {
+                return new Intl.DateTimeFormat('en-US', {
+                    ...options,
+                    timeZone: tz,
+                    timeZoneName: 'short'
+                }).format(date);
+            };
+
+            const utcString = format('UTC');
+            const localString = format(Intl.DateTimeFormat().resolvedOptions().timeZone);
+
+            const tooltip = document.createElement('div');
+            tooltip.className = 'absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-slate-800 text-white text-[11px] rounded-lg shadow-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-pre-line min-w-[300px] z-50 pointer-events-none border border-white/10';
+            tooltip.textContent = `UTC: ${utcString}\nLocal: ${localString}`;
+
+            return tooltip;
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
 
@@ -427,22 +470,6 @@
                         }
                         const value = item[column];
                         let wrapper = document.createElement('div');
-                        let dateTooltip = null;
-
-                        if (Number.isInteger(value)) {
-                            let dateValue;
-                            if (value >= 10000000000) {
-                                const date = new Date(value);
-                                if (!isNaN(date)) dateValue = `${date.toISOString()} (ms epoch)`;
-                            } else if (value >= 100000000) {
-                                const date = new Date(value * 1000);
-                                if (!isNaN(date)) dateValue = `${date.toISOString()} (s epoch)`;
-                            }
-                            if (dateValue) {
-                                dateTooltip = dateValue;
-                                wrapper.className = 'relative group/tooltip';
-                            }
-                        }
 
                         if (index === 0) {
                             const viewUrl = '/tables/<%= encodeURIComponent(Table.TableName) %>/items/' + encodeURIComponent(Object.values(item.__key).join(','));
@@ -456,22 +483,14 @@
                             wrapper.appendChild(link);
                         } else {
                             const content = JSONRender(value);
-                            if (dateTooltip) {
-                                content.querySelector('.json-formatter-number').className = 'json-formatter-number cursor-help decoration-dotted underline-offset-4 underline text-blue-600 dark:text-blue-400';
+                            const dateTooltipElement = getEpochTooltipElement(value);
+                            if (dateTooltipElement) {
+                                content.querySelector('.json-formatter-number').classList.add('cursor-help', 'decoration-dotted', 'underline-offset-4', 'underline', 'text-blue-600', 'dark:text-blue-400');
+
+                                wrapper.classList.add('relative', 'group/tooltip');
+                                wrapper.appendChild(dateTooltipElement);
                             }
                             wrapper.appendChild(content);
-
-                            if (dateTooltip) {
-                                const tooltip = document.createElement('div');
-                                tooltip.className = 'absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-slate-700 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none';
-                                tooltip.textContent = dateTooltip;
-
-                                const arrow = document.createElement('div');
-                                arrow.className = 'absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-slate-700';
-                                tooltip.appendChild(arrow);
-
-                                wrapper.appendChild(tooltip);
-                            }
                         }
 
                         td.appendChild(wrapper);
