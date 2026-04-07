@@ -1,0 +1,334 @@
+<%
+/** @typedef {import('@aws-sdk/client-dynamodb').TableDescription} TableDescription */
+/** @typedef {import('@aws-sdk/client-dynamodb').KeySchemaElement} KeySchemaElement */
+/**
+ * @name Table
+ * @type {TableDescription}
+ */
+/**
+ * @name hashKey
+ * @type {KeySchemaElement}
+ */
+/**
+ * @name rangeKey
+ * @type {KeySchemaElement}
+ */
+%>
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= Table.TableName %> | Indexes | DynamoDB</title>
+    <%- include('partials/head') %>
+</head>
+
+<body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950">
+
+    <%- include('partials/header', {
+        breadcrumb: [
+            { text: 'Tables', url: '/' },
+            { text: Table.TableName, url: `/tables/${encodeURIComponent(Table.TableName)}` },
+            { text: 'Indexes', active: true }
+        ],
+        tabs: [],
+        actions: `
+            <a href="/tables/${encodeURIComponent(Table.TableName)}/meta" class="inline-flex items-center px-3 py-1.5 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all no-underline">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1.5"></i>
+                BACK TO META
+            </a>
+        `
+    }) %>
+
+    <main class="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 mt-18">
+        <%- include('partials/error-container') %>
+
+        <!-- Table Key Schema Section -->
+        <div class="mb-8">
+            <div class="flex items-center space-x-2 mb-4 px-1">
+                <div class="w-1 h-4 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
+                <h2 class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">Table Key Schema</h2>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Partition Key (HASH)</label>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-mono text-slate-900 dark:text-slate-100"><%= hashKey.AttributeName %></span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">(<%= Table.AttributeDefinitions?.find(attr => attr.AttributeName === hashKey.AttributeName)?.AttributeType || 'S' %>)</span>
+                        </div>
+                    </div>
+                    <% if (rangeKey) { %>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Sort Key (RANGE)</label>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-mono text-slate-900 dark:text-slate-100"><%= rangeKey.AttributeName %></span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">(<%= Table.AttributeDefinitions?.find(attr => attr.AttributeName === rangeKey.AttributeName)?.AttributeType || 'S' %>)</span>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Secondary Indexes Section -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4 px-1">
+                <div class="flex items-center space-x-2">
+                    <div class="w-1 h-4 bg-purple-500 dark:bg-purple-400 rounded-full"></div>
+                    <h2 class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">Global Secondary Indexes</h2>
+                </div>
+                <span class="text-xs text-slate-500 dark:text-slate-400">
+                    <%= Table.GlobalSecondaryIndexes?.length || 0 %> <%= (Table.GlobalSecondaryIndexes?.length || 0) === 1 ? 'Index' : 'Indexes' %>
+                </span>
+            </div>
+
+            <% if (Table.GlobalSecondaryIndexes && Table.GlobalSecondaryIndexes.length > 0) { %>
+                <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Partition Key</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sort Key</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Projection</th>
+                                <th class="px-4 py-3 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                            <% Table.GlobalSecondaryIndexes.filter(({ IndexStatus }) => IndexStatus !== 'DELETING').forEach((gsi) => { %>
+                                <% const gsiHashKey = gsi.KeySchema?.find(k => k.KeyType === 'HASH'); %>
+                                <% const gsiRangeKey = gsi.KeySchema?.find(k => k.KeyType === 'RANGE'); %>
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                    <td class="px-4 py-3 text-sm font-mono text-slate-900 dark:text-slate-100"><%= gsi.IndexName %></td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <span class="font-mono text-slate-900 dark:text-slate-100"><%= gsiHashKey?.AttributeName %></span>
+                                        <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">(<%= Table.AttributeDefinitions?.find(attr => attr.AttributeName === gsiHashKey?.AttributeName)?.AttributeType || 'S' %>)</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <% if (gsiRangeKey) { %>
+                                            <span class="font-mono text-slate-900 dark:text-slate-100"><%= gsiRangeKey.AttributeName %></span>
+                                            <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">(<%= Table.AttributeDefinitions?.find(attr => attr.AttributeName === gsiRangeKey.AttributeName)?.AttributeType || 'S' %>)</span>
+                                        <% } else { %>
+                                            <span class="text-slate-400 dark:text-slate-600">—</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100"><%= gsi.Projection?.ProjectionType || 'ALL' %></td>
+                                    <td class="px-4 py-3 text-right">
+                                        <button type="button" class="delete-gsi-btn inline-flex items-center px-2 py-1 rounded hover:bg-red-600 text-red-600 dark:text-red-400 hover:text-white text-xs font-bold transition-all" data-index-name="<%= gsi.IndexName %>">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm p-8 text-center">
+                    <i data-lucide="list-tree" class="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-700"></i>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">No Global Secondary Indexes</p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Create New GSI Form -->
+        <div>
+            <div class="flex items-center space-x-2 mb-4 px-1">
+                <div class="w-1 h-4 bg-green-500 dark:bg-green-400 rounded-full"></div>
+                <h2 class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">Create New Global Secondary Index</h2>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                <form id="create-gsi-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Index Name -->
+                        <div class="md:col-span-2">
+                            <label for="IndexName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Index Name</label>
+                            <input required type="text" id="IndexName" name="IndexName" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. GSI_UserEmail" />
+                        </div>
+
+                        <!-- Partition Key -->
+                        <div>
+                            <label for="HashAttributeName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Partition Key Attribute</label>
+                            <input required type="text" id="HashAttributeName" name="HashAttributeName" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. email" />
+                        </div>
+
+                        <div>
+                            <label for="HashAttributeType" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Partition Key Type</label>
+                            <select required id="HashAttributeType" name="HashAttributeType" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="S">String</option>
+                                <option value="N">Number</option>
+                                <option value="B">Binary</option>
+                            </select>
+                        </div>
+
+                        <!-- Sort Key -->
+                        <div>
+                            <label for="RangeAttributeName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Sort Key Attribute (Optional)</label>
+                            <input type="text" id="RangeAttributeName" name="RangeAttributeName" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. createdAt" />
+                        </div>
+
+                        <div>
+                            <label for="RangeAttributeType" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Sort Key Type</label>
+                            <select id="RangeAttributeType" name="RangeAttributeType" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Select type...</option>
+                                <option value="S">String</option>
+                                <option value="N">Number</option>
+                                <option value="B">Binary</option>
+                            </select>
+                        </div>
+
+                        <!-- Capacity -->
+                        <div>
+                            <label for="ReadCapacityUnits" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Read Capacity Units</label>
+                            <input required type="number" id="ReadCapacityUnits" name="ReadCapacityUnits" value="5" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        </div>
+
+                        <div>
+                            <label for="WriteCapacityUnits" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Write Capacity Units</label>
+                            <input required type="number" id="WriteCapacityUnits" name="WriteCapacityUnits" value="5" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        </div>
+
+                        <!-- Projection Type -->
+                        <div class="md:col-span-2">
+                            <label for="ProjectionType" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Projection Type</label>
+                            <select required id="ProjectionType" name="ProjectionType" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="ALL">ALL - Project all attributes</option>
+                                <option value="KEYS_ONLY">KEYS_ONLY - Only key attributes</option>
+                                <option value="INCLUDE">INCLUDE - Specify attributes</option>
+                            </select>
+                        </div>
+
+                        <!-- Non-Key Attributes (for INCLUDE projection) -->
+                        <div id="non-key-attrs-container" class="md:col-span-2 hidden">
+                            <label for="NonKeyAttributes" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Non-Key Attributes to Include</label>
+                            <input type="text" id="NonKeyAttributes" name="NonKeyAttributes" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. email, createdAt, status" />
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">Comma-separated list of attribute names to include in the projection</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-btn" class="inline-flex items-center px-4 py-2 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all">
+                            CANCEL
+                        </button>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-bold shadow-lg transition-all">
+                            <i data-lucide="plus" class="w-3.5 h-3.5 mr-1.5"></i>
+                            CREATE INDEX
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /* global lucide, handleError */
+        lucide.createIcons();
+
+        // Projection type change handler
+        const projectionTypeSelect = document.querySelector('#ProjectionType');
+        const nonKeyAttrsContainer = document.querySelector('#non-key-attrs-container');
+        const nonKeyAttrsInput = document.querySelector('#NonKeyAttributes');
+
+        projectionTypeSelect.addEventListener('change', () => {
+            if (projectionTypeSelect.value === 'INCLUDE') {
+                nonKeyAttrsContainer.classList.remove('hidden');
+                nonKeyAttrsInput.required = true;
+            } else {
+                nonKeyAttrsContainer.classList.add('hidden');
+                nonKeyAttrsInput.required = false;
+                nonKeyAttrsInput.value = '';
+            }
+        });
+
+        // Cancel button
+        document.querySelector('#cancel-btn').addEventListener('click', () => {
+            document.querySelector('#create-gsi-form').reset();
+            nonKeyAttrsContainer.classList.add('hidden');
+            nonKeyAttrsInput.required = false;
+        });
+
+        // Delete GSI buttons
+        document.querySelectorAll('.delete-gsi-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const indexName = btn.dataset.indexName;
+
+                if (!confirm(`Are you sure you want to delete the index "${indexName}"?\n\nThis action cannot be undone.`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${window.location.pathname}/${encodeURIComponent(indexName)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.message || 'Failed to delete index');
+                    }
+
+                    // Reload page to show updated index list
+                    window.location.reload();
+                } catch (error) {
+                    handleError(error);
+                }
+            });
+        });
+
+        // Form submission
+        document.querySelector('#create-gsi-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+
+            const gsiData = {
+                IndexName: formData.get('IndexName'),
+                HashAttributeName: formData.get('HashAttributeName'),
+                HashAttributeType: formData.get('HashAttributeType'),
+                RangeAttributeName: formData.get('RangeAttributeName') || undefined,
+                RangeAttributeType: formData.get('RangeAttributeType') || undefined,
+                ProjectionType: formData.get('ProjectionType'),
+                ReadCapacityUnits: parseInt(formData.get('ReadCapacityUnits')),
+                WriteCapacityUnits: parseInt(formData.get('WriteCapacityUnits'))
+            };
+
+            // Add NonKeyAttributes if projection type is INCLUDE
+            if (gsiData.ProjectionType === 'INCLUDE') {
+                const nonKeyAttrs = formData.get('NonKeyAttributes');
+                if (nonKeyAttrs) {
+                    gsiData.NonKeyAttributes = nonKeyAttrs.split(',').map(attr => attr.trim()).filter(attr => attr);
+                }
+            }
+
+            try {
+                const response = await fetch(window.location.pathname, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(gsiData),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    handleError(error.message || 'Failed to create index');
+                }
+
+                // Reload page to show new index
+                window.location.reload();
+            } catch (error) {
+                handleError(error);
+            }
+        });
+    </script>
+</body>
+
+</html>

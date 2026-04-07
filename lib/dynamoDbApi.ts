@@ -3,6 +3,7 @@ import {
     DeleteTableCommand,
     DescribeTableCommand,
     ListTablesCommand,
+    UpdateTableCommand,
     UpdateTimeToLiveCommand,
     DescribeTimeToLiveCommand,
     type CreateTableInput,
@@ -14,6 +15,8 @@ import {
     type ListTablesInput,
     type ListTablesOutput,
     type TableDescription,
+    type UpdateTableInput,
+    type UpdateTableOutput,
     type UpdateTimeToLiveInput,
     type UpdateTimeToLiveOutput,
     type DescribeTimeToLiveInput,
@@ -101,5 +104,9 @@ export class DynamoApiController {
 
     async describeTimeToLive(input: DescribeTimeToLiveInput): Promise<DescribeTimeToLiveOutput> {
         return await this.dynamodb.send(new DescribeTimeToLiveCommand(input));
+    }
+
+    async updateTable(input: UpdateTableInput): Promise<UpdateTableOutput> {
+        return await this.dynamodb.send(new UpdateTableCommand(input));
     }
 }

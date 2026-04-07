@@ -383,6 +383,125 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
         res.render('meta', data);
     }));
 
+    app.get('/tables/:TableName/indexes', asyncMiddleware(async(req, res) => {
+        const { TableName } = req.params;
+        const description = await ddbApi.describeTable({ TableName });
+        const hashKey = description.KeySchema!.find(schema => schema.KeyType === 'HASH');
+        const rangeKey = description.KeySchema!.find(schema => schema.KeyType === 'RANGE');
+
+        res.render('indexes', {
+            Table: description,
+            hashKey,
+            rangeKey,
+        });
+    }));
+
+    type CreateGSIInput = {
+        IndexName: string;
+        HashAttributeName: string;
+        HashAttributeType: ScalarAttributeType;
+        RangeAttributeName?: string;
+        RangeAttributeType?: ScalarAttributeType;
+        ProjectionType: 'ALL' | 'KEYS_ONLY' | 'INCLUDE';
+        NonKeyAttributes?: string[];
+        ReadCapacityUnits: number;
+        WriteCapacityUnits: number;
+    };
+
+    app.post(
+        '/tables/:TableName/indexes',
+        bodyParser.json({ limit: '500kb' }),
+        asyncMiddleware(async(req, res) => {
+            const { TableName } = req.params;
+            const {
+                IndexName,
+                HashAttributeName,
+                HashAttributeType,
+                RangeAttributeName,
+                RangeAttributeType,
+                ProjectionType,
+                NonKeyAttributes,
+                ReadCapacityUnits,
+                WriteCapacityUnits,
+            } = req.body as CreateGSIInput;
+
+            const description = await ddbApi.describeTable({ TableName });
+            const attributeDefinitions = [...(description.AttributeDefinitions || [])];
+
+            if (isAttributeNotAlreadyCreated(attributeDefinitions, HashAttributeName)) {
+                attributeDefinitions.push({
+                    AttributeName: HashAttributeName,
+                    AttributeType: HashAttributeType,
+                });
+            }
+
+            const keySchema: KeySchemaElement[] = [
+                {
+                    AttributeName: HashAttributeName,
+                    KeyType: 'HASH',
+                },
+            ];
+
+            if (RangeAttributeName) {
+                if (isAttributeNotAlreadyCreated(attributeDefinitions, RangeAttributeName)) {
+                    attributeDefinitions.push({
+                        AttributeName: RangeAttributeName,
+                        AttributeType: RangeAttributeType,
+                    });
+                }
+
+                keySchema.push({
+                    AttributeName: RangeAttributeName,
+                    KeyType: 'RANGE',
+                });
+            }
+
+            const projection: Pick<CreateGSIInput, 'ProjectionType' | 'NonKeyAttributes'> = {
+                ProjectionType,
+            };
+            if (ProjectionType === 'INCLUDE') {
+                projection.NonKeyAttributes = NonKeyAttributes;
+            }
+
+            await ddbApi.updateTable({
+                TableName,
+                AttributeDefinitions: attributeDefinitions,
+                GlobalSecondaryIndexUpdates: [
+                    {
+                        Create: {
+                            IndexName,
+                            KeySchema: keySchema,
+                            Projection: projection,
+                            ProvisionedThroughput: {
+                                ReadCapacityUnits,
+                                WriteCapacityUnits,
+                            },
+                        },
+                    },
+                ],
+            });
+
+            res.status(204).end();
+        }),
+    );
+
+    app.delete('/tables/:TableName/indexes/:IndexName', asyncMiddleware(async(req, res) => {
+        const { TableName, IndexName } = req.params;
+
+        await ddbApi.updateTable({
+            TableName,
+            GlobalSecondaryIndexUpdates: [
+                {
+                    Delete: {
+                        IndexName,
+                    },
+                },
+            ],
+        });
+
+        res.status(204).end();
+    }));
+
     app.delete('/tables/:TableName/items/:key', asyncMiddleware(async(req, res) => {
         const { TableName } = req.params;
         const tableDescription = await ddbApi.describeTable({ TableName });

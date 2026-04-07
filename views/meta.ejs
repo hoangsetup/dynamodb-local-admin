@@ -10,7 +10,9 @@
 </head>
 
 <body class="min-h-full flex flex-col px-0 py-0 bg-slate-50 dark:bg-slate-950">
-
+    <%
+        const indexesUrl = `/tables/${encodeURIComponent(Table.TableName)}/indexes`;
+    %>
     <%- include('partials/header', {
         breadcrumb: [
             { text: 'Tables', url: '/' },
@@ -29,6 +31,11 @@
                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1"></i>
                 </button>
                 <div id="actions-menu" class="hidden absolute right-0 mt-2 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden z-50">
+                    <a href="${indexesUrl}" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors text-slate-700 dark:text-slate-300 no-underline">
+                        <i data-lucide="list-tree" class="w-4 h-4"></i>
+                        <span>Manage Indexes</span>
+                    </a>
+                    <div class="border-t border-slate-200 dark:border-slate-700"></div>
                     <button type="button" id="purgeTable" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors text-amber-600 dark:text-amber-400">
                         <i data-lucide="eraser" class="w-4 h-4"></i>
                         <span>Purge Data</span>
@@ -42,7 +49,7 @@
         `
     }) %>
 
-    <main class="flex-grow flex flex-col mx-auto w-full px-4 py-6 mt-[72px]">
+    <main class="grow flex flex-col mx-auto w-full px-4 py-6 mt-18">
         <%- include('partials/error-container') %>
 
         <div class="flex items-center justify-between mb-3 px-1">
@@ -53,7 +60,7 @@
         </div>
 
         <!-- Ace Editor Container -->
-        <div class="flex-grow relative min-h-[500px] mb-4" id="documentWrapper">
+        <div class="grow relative min-h-125 mb-4" id="documentWrapper">
             <div id="documentArea"><%= JSON.stringify(Table, null, 2) %></div>
         </div>
     </main>
