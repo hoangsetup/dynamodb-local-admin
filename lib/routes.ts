@@ -394,6 +394,19 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
         });
     }));
 
+    app.get('/tables/:TableName/ttl', asyncMiddleware(async(req, res) => {
+        const { TableName } = req.params;
+        const [Table, { TimeToLiveDescription }] = await Promise.all([
+            ddbApi.describeTable({ TableName }),
+            ddbApi.describeTimeToLive({ TableName }),
+        ]);
+
+        res.render('ttl', {
+            Table,
+            TimeToLiveDescription,
+        });
+    }));
+
     type CreateGSIInput = {
         IndexName: string;
         HashAttributeName: string;
@@ -495,6 +508,26 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
                     },
                 },
             ],
+        });
+
+        res.status(204).end();
+    }));
+
+    type UpdateTTLInput = {
+        Enabled: boolean;
+        AttributeName?: string;
+    };
+
+    app.post('/tables/:TableName/ttl', bodyParser.json({ limit: '500kb' }), asyncMiddleware(async (req, res) => {
+        const { TableName } = req.params;
+        const { Enabled, AttributeName } = req.body as UpdateTTLInput;
+
+        await ddbApi.updateTimeToLive({
+            TableName,
+            TimeToLiveSpecification: {
+                Enabled,
+                AttributeName: AttributeName,
+            },
         });
 
         res.status(204).end();

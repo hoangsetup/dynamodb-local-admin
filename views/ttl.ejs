@@ -1,0 +1,162 @@
+<%
+/** @typedef {import('@aws-sdk/client-dynamodb').TableDescription} TableDescription */
+/** @typedef {import('@aws-sdk/client-dynamodb').TimeToLiveDescription} TimeToLiveDescription */
+/**
+ * @name Table
+ * @type {TableDescription}
+ */
+/**
+ * @name TimeToLiveDescription
+ * @type {TimeToLiveDescription}
+ */
+%>
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= Table.TableName %> | TTL | DynamoDB</title>
+    <%- include('partials/head') %>
+</head>
+
+<body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950">
+
+    <%- include('partials/header', {
+        breadcrumb: [
+            { text: 'Tables', url: '/' },
+            { text: Table.TableName, url: `/tables/${encodeURIComponent(Table.TableName)}` },
+            { text: 'TTL', active: true }
+        ],
+        tabs: [],
+        actions: `
+            <a href="/tables/${encodeURIComponent(Table.TableName)}/meta" class="inline-flex items-center px-3 py-1.5 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all no-underline">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1.5"></i>
+                BACK TO META
+            </a>
+        `
+    }) %>
+
+    <main class="grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 mt-18">
+        <%- include('partials/error-container') %>
+
+        <!-- Configure TTL -->
+        <div>
+            <div class="flex items-center space-x-2 mb-4 px-1">
+                <div class="w-1 h-4 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
+                <h2 class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">Time To Live (TTL)</h2>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                <form id="ttl-form">
+                    <div class="space-y-6">
+                        <!-- Enable/Disable Toggle -->
+                        <div>
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" id="EnableTTL" name="EnableTTL" <%= TimeToLiveDescription?.TimeToLiveStatus === 'ENABLED' ? 'checked' : '' %> class="w-4 h-4 text-blue-600 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 rounded focus:ring-blue-500 focus:ring-2" />
+                                <label for="EnableTTL" class="text-sm font-bold text-slate-700 dark:text-slate-300">Enable Time To Live (TTL)</label>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 ml-7 italic">TTL automatically deletes items after a specified timestamp</p>
+                        </div>
+
+                        <!-- TTL Attribute Name -->
+                        <div id="ttl-attribute-container" class="<%= TimeToLiveDescription?.TimeToLiveStatus === 'ENABLED' ? '' : 'hidden' %>">
+                            <label for="AttributeName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">TTL Attribute Name</label>
+                            <input type="text" id="AttributeName" name="AttributeName" value="<%= TimeToLiveDescription?.AttributeName || '' %>" class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. expiresAt" />
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">The attribute name that stores the TTL timestamp (Unix epoch time in seconds)</p>
+                        </div>
+
+                        <!-- Information Box -->
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <i data-lucide="info" class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5"></i>
+                                <div class="flex-1 text-sm text-blue-900 dark:text-blue-100">
+                                    <p class="font-bold mb-2">How TTL Works</p>
+                                    <ul class="space-y-1 text-xs">
+                                        <li>• Items expire when the TTL attribute timestamp is in the past</li>
+                                        <li>• Timestamp must be in Unix epoch time format (seconds since Jan 1, 1970)</li>
+                                        <li>• Expired items are typically deleted within 48 hours</li>
+                                        <li>• Deleting expired items does not consume write capacity</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <a href="/tables/<%= encodeURIComponent(Table.TableName) %>/meta" class="inline-flex items-center px-4 py-2 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all no-underline">
+                            CANCEL
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all">
+                            <i data-lucide="save" class="w-3.5 h-3.5 mr-1.5"></i>
+                            SAVE CHANGES
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /* global lucide, handleError */
+        lucide.createIcons();
+
+        // TTL checkbox toggle
+        const ttlCheckbox = document.querySelector('#EnableTTL');
+        const ttlContainer = document.querySelector('#ttl-attribute-container');
+        const ttlInput = document.querySelector('#AttributeName');
+
+        ttlCheckbox.addEventListener('change', () => {
+            if (ttlCheckbox.checked) {
+                ttlContainer.classList.remove('hidden');
+                ttlInput.required = true;
+            } else {
+                ttlContainer.classList.add('hidden');
+                ttlInput.required = false;
+            }
+        });
+
+        // Form submission
+        document.querySelector('#ttl-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const enabled = formData.has('EnableTTL');
+            const attributeName = formData.get('AttributeName');
+
+            if (enabled && !attributeName) {
+                handleError('Attribute name is required when TTL is enabled');
+                return;
+            }
+
+            const ttlData = {
+                Enabled: enabled,
+                AttributeName: attributeName || undefined,
+            };
+
+            try {
+                const response = await fetch(window.location.pathname, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(ttlData),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    handleError(error.message || 'Failed to update TTL');
+                    return;
+                }
+
+                // Reload page to show updated TTL status
+                window.location.reload();
+            } catch (error) {
+                handleError(error);
+            }
+        });
+    </script>
+</body>
+
+</html>
