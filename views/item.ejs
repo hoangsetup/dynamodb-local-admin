@@ -87,12 +87,15 @@
 
             fetch(document.location.pathname, {
                 method: 'put',
-                headers: { 'Content-Type': 'application/json' },
-                body: editor.getValue()
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: editor.getValue(),
             }).then(async (response) => {
                 if (response.ok) return response.json();
-                const responseText = await response.text();
-                throw new Error(JSON.parse(responseText).message);
+                const error = await response.json();
+                throw new Error(error.message);
             }).then((json) => {
                 if (document.location.pathname.endsWith('/add-item')) {
                     const urlPart1 = document.location.pathname.replace('/add-item', '');
@@ -135,13 +138,16 @@
             if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return;
 
             fetch(document.location.pathname, {
-                method: 'delete'
+                method: 'delete',
+                headers: {
+                    'Accept': 'application/json',
+                }
             }).then(async (response) => {
                 if (response.ok) {
                     window.location = `/tables/<%= encodeURIComponent(TableName) %>`;
                 } else {
-                    const responseText = await response.text();
-                    throw new Error(JSON.parse(responseText).message);
+                    const error = await response.json();
+                    throw new Error(error.message);
                 }
             }).catch((error) => {
                 handleError(error.message);

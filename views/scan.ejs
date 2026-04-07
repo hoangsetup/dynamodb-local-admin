@@ -582,8 +582,16 @@
                 } catch (e) {}
             }
 
-            fetch(document.location.pathname + '/items' + document.location.search)
-                .then(r => r.ok ? r.json() : r.text().then(t => { throw new Error(JSON.parse(t).message) }))
+            fetch(document.location.pathname + '/items' + document.location.search, {
+                headers: {
+                    'Accept': 'application/json',
+                },
+            })
+                .then(async (response) => {
+                    if (response.ok) return response.json();
+                    const error = await response.json();
+                    throw new Error(error.message);
+                })
                 .then(renderItems)
                 .catch(err => handleError(err.message));
         });

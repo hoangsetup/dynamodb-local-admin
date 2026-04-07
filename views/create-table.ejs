@@ -82,14 +82,17 @@
                 try {
                     const response = await fetch(document.location.pathname, {
                         method: 'post',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
                         body: JSON.stringify(createTableRequest)
                     });
                     if (response.ok) {
                         window.location = '/';
                     } else {
-                        const error = await response.text();
-                        handleError(JSON.parse(error).message);
+                        const error = await response.json();
+                        handleError(error.message);
                     }
                 } catch (e) {
                     handleError(e.message);

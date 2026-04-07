@@ -61,10 +61,16 @@
         }
 
         try {
-            const response = await fetch(url, { method });
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Accept': 'application/json',
+                },
+            });
             if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(JSON.parse(errText).message || 'Action failed');
+                const error = await response.json();
+                handleError(error.message || 'Action failed');
+                return;
             }
 
             // Redirect to custom URL or reload current page

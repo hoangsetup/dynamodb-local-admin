@@ -1,7 +1,6 @@
 import path from 'node:path';
 import type { AttributeDefinition, KeySchemaElement, GlobalSecondaryIndex, LocalSecondaryIndex, ScanInput, QueryInput, ScalarAttributeType } from '@aws-sdk/client-dynamodb';
 import express, { type Express, type ErrorRequestHandler } from 'express';
-import errorhandler from 'errorhandler';
 import bodyParser from 'body-parser';
 import pickBy from 'lodash.pickby';
 import cookieParser from 'cookie-parser';
@@ -15,7 +14,6 @@ import type { DynamoApiController } from './dynamoDbApi';
 const DEFAULT_THEME = process.env.DEFAULT_THEME || 'light';
 
 export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
-    app.use(errorhandler());
     app.use('/assets', express.static(path.join(__dirname, '..', 'public')));
 
     app.use(
@@ -582,7 +580,7 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
 
     app.use(((error, req, res, _next) => {
         console.info(error.stack);
-        if (req.xhr) {
+        if (req.xhr || req.accepts('json')) {
             res.status(500).json({ message: error.message });
         } else {
             res.status(500).render('error', {
