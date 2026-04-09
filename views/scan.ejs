@@ -172,6 +172,31 @@
         </div>
 
         <!-- No Results -->
+        <!-- Scan Stats -->
+        <div id="scan-stats" class="hidden mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3">
+            <div class="flex items-center gap-6 text-xs text-blue-900 dark:text-blue-100 font-mono">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="package" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                    <span class="text-blue-700 dark:text-blue-300">Items returned: <strong id="stat-count">0</strong></span>
+                </div>
+                <span class="text-blue-300 dark:text-blue-700">·</span>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="scan" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                    <span class="text-blue-700 dark:text-blue-300">Items scanned: <strong id="stat-scanned">0</strong></span>
+                </div>
+                <span class="text-blue-300 dark:text-blue-700">·</span>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="gauge" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                    <span class="text-blue-700 dark:text-blue-300">Efficiency: <strong id="stat-efficiency">0%</strong></span>
+                </div>
+                <span class="text-blue-300 dark:text-blue-700">·</span>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                    <span class="text-blue-700 dark:text-blue-300">RCUs consumed: <strong id="stat-rcu">0</strong></span>
+                </div>
+            </div>
+        </div>
+
         <div class="no-results text-center py-16 hidden">
             <div class="mb-3 text-slate-300 dark:text-slate-600"><i data-lucide="file-x-2" class="w-12 h-12 mx-auto"></i></div>
             <h3 class="text-slate-700 dark:text-slate-300 text-sm font-medium mb-1">No Results Found</h3>
@@ -502,6 +527,19 @@
 
             function renderItems(data) {
                 tableData = data;
+
+                // Update scan stats
+                const scanStats = document.querySelector('#scan-stats');
+                if (data.Count !== undefined && data.ScannedCount !== undefined) {
+                    document.querySelector('#stat-count').textContent = data.Count;
+                    document.querySelector('#stat-scanned').textContent = data.ScannedCount;
+                    const efficiency = data.ScannedCount > 0 ? Math.round((data.Count / data.ScannedCount) * 100) : 0;
+                    document.querySelector('#stat-efficiency').textContent = efficiency + '%';
+                    document.querySelector('#stat-rcu').textContent = (data.ConsumedCapacity || 0).toFixed(2);
+                    scanStats.classList.remove('hidden');
+                    lucide.createIcons();
+                }
+
                 const actionsRow = document.querySelector('#actions-row');
                 actionsRow.insertAdjacentHTML('beforeend', data.uniqueKeys.map((key, index) => {
                     const keyLabel = key === keySchema.hashKey ? ' <span class="italic text-slate-500 dark:text-slate-600">(PK)</span>'
@@ -546,6 +584,7 @@
                     document.querySelector('.pagination-container').classList.remove('hidden');
                 } else {
                     document.querySelector('.no-results').classList.remove('hidden');
+                    document.querySelector('#scan-stats').classList.add('hidden');
                 }
                 document.querySelector('#table-placeholder').classList.add('hidden');
             }
