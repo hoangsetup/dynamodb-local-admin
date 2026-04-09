@@ -320,6 +320,7 @@
                 if (!response.ok) {
                     const error = await response.json();
                     handleError(error.message || 'Failed to create index');
+                    return;
                 }
 
                 // Reload page to show new index
