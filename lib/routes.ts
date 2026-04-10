@@ -544,6 +544,30 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
         res.status(204).end();
     }));
 
+    type PreviewTTLInput = {
+        AttributeName: string;
+        Timestamp: number;
+    };
+
+    app.post('/tables/:TableName/ttl/preview', bodyParser.json({ limit: '500kb' }), asyncMiddleware(async (req, res) => {
+        const { TableName } = req.params;
+        const { AttributeName, Timestamp } = req.body as PreviewTTLInput;
+
+        const scanResult = await ddbApi.scan({
+            TableName,
+            Limit: 100,
+            FilterExpression: '#ttl <= :timestamp AND attribute_exists(#ttl)',
+            ExpressionAttributeNames: {
+                '#ttl': AttributeName,
+            },
+            ExpressionAttributeValues: {
+                ':timestamp': Timestamp,
+            },
+        });
+
+        res.json({ items: scanResult.Items || [] });
+    }));
+
     app.delete('/tables/:TableName/items/:key', asyncMiddleware(async(req, res) => {
         const { TableName } = req.params;
         const tableDescription = await ddbApi.describeTable({ TableName });

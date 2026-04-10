@@ -95,6 +95,96 @@
                 </form>
             </div>
         </div>
+
+        <!-- Preview Time to Live -->
+        <div class="mt-8">
+            <div class="flex items-center space-x-2 mb-4 px-1">
+                <div class="w-1 h-4 bg-amber-500 dark:bg-amber-400 rounded-full"></div>
+                <h2 class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mono">Preview Time To Live</h2>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                    Confirm that your TTL attribute and values are working properly by specifying a date and time, and reviewing a sample of the items that will be deleted by then. Note that preview may show only some of the relevant items.
+                </p>
+
+                <form id="preview-form" class="space-y-6">
+                    <!-- TTL Attribute Name -->
+                    <div>
+                        <label for="PreviewAttributeName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                            TTL attribute name
+                        </label>
+                        <input type="text" id="PreviewAttributeName" name="AttributeName" required class="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter attribute name" />
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">The name of the attribute that will be stored in the TTL timestamp.</p>
+                        <p id="preview-error" class="hidden text-xs text-red-600 dark:text-red-400 mt-2">
+                            <i data-lucide="alert-circle" class="w-3 h-3 inline-block mr-1"></i>
+                            <span>You must enter a TTL attribute to be able to preview items.</span>
+                        </p>
+                    </div>
+
+                    <!-- Simulated Date/Time -->
+                    <div>
+                        <label for="PreviewTimestamp" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                            Simulated date and time
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <div class="relative shrink-0">
+                                <select id="PreviewTimeType" aria-label="Time format" class="appearance-none px-3 py-2 pr-8 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="epoch">Epoch time value</option>
+                                    <option value="datetime">Date/Time</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                            </div>
+                            <input type="number" id="PreviewTimestamp" name="Timestamp" required class="flex-1 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="1775898144" />
+                            <input type="datetime-local" id="PreviewDateTime" name="DateTime" aria-label="Simulated date and time" class="hidden flex-1 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                            <span id="PreviewDateDisplay" class="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap"></span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Specify the date and time to simulate which items would be expired.</p>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all">
+                            <i data-lucide="search" class="w-3.5 h-3.5 mr-1.5"></i>
+                            RUN PREVIEW
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Preview Results -->
+                <div id="preview-results" class="hidden mt-6 border-t border-slate-200 dark:border-slate-800 pt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300">Preview Results</h3>
+                        <span id="preview-count" class="text-xs text-slate-500 dark:text-slate-400"></span>
+                    </div>
+
+                    <div id="preview-loading" class="flex items-center justify-center py-8" style="display: none;">
+                        <div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                            <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Scanning items...</span>
+                        </div>
+                    </div>
+
+                    <div id="preview-empty" class="hidden bg-slate-50 dark:bg-slate-950 rounded-lg p-8 text-center">
+                        <i data-lucide="inbox" class="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-3"></i>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">No items found that would be deleted with the specified TTL attribute and timestamp.</p>
+                    </div>
+
+                    <div id="preview-items" class="hidden overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                            <thead class="bg-slate-50 dark:bg-slate-950">
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Item</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">TTL Value</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-slate-500 dark:text-slate-400">Expiration Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="preview-items-body" class="divide-y divide-slate-200 dark:divide-slate-800">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -156,6 +246,147 @@
                 handleError(error);
             }
         });
+
+        // Preview Time to Live
+        const previewTimeType = document.querySelector('#PreviewTimeType');
+        const previewTimestamp = document.querySelector('#PreviewTimestamp');
+        const previewDateTime = document.querySelector('#PreviewDateTime');
+        const previewDateDisplay = document.querySelector('#PreviewDateDisplay');
+
+        // Toggle between epoch and datetime input
+        previewTimeType.addEventListener('change', () => {
+            if (previewTimeType.value === 'datetime') {
+                previewTimestamp.classList.add('hidden');
+                previewDateTime.classList.remove('hidden');
+                previewTimestamp.required = false;
+                previewDateTime.required = true;
+            } else {
+                previewTimestamp.classList.remove('hidden');
+                previewDateTime.classList.add('hidden');
+                previewTimestamp.required = true;
+                previewDateTime.required = false;
+            }
+            lucide.createIcons();
+        });
+
+        // Update date display when epoch timestamp changes
+        previewTimestamp.addEventListener('input', () => {
+            const timestamp = parseInt(previewTimestamp.value);
+            if (timestamp && !isNaN(timestamp)) {
+                previewDateDisplay.textContent = new Date(timestamp * 1000).toString();
+            } else {
+                previewDateDisplay.textContent = '';
+            }
+        });
+
+        // Update timestamp when datetime changes
+        previewDateTime.addEventListener('input', () => {
+            const dateTime = previewDateTime.value;
+            if (dateTime) {
+                previewTimestamp.value = Math.floor(new Date(dateTime).getTime() / 1000);
+            }
+        });
+
+        // Preview form submission
+        document.querySelector('#preview-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const attributeName = formData.get('AttributeName');
+            let timestamp;
+
+            if (previewTimeType.value === 'datetime') {
+                const dateTime = formData.get('DateTime');
+                timestamp = Math.floor(new Date(dateTime).getTime() / 1000);
+            } else {
+                timestamp = parseInt(formData.get('Timestamp'));
+            }
+
+            if (!attributeName) {
+                document.querySelector('#preview-error').classList.remove('hidden');
+                lucide.createIcons();
+                return;
+            } else {
+                document.querySelector('#preview-error').classList.add('hidden');
+            }
+
+            // Show loading state
+            document.querySelector('#preview-results').classList.remove('hidden');
+            document.querySelector('#preview-loading').style.display = 'flex';
+            document.querySelector('#preview-empty').classList.add('hidden');
+            document.querySelector('#preview-items').classList.add('hidden');
+
+            try {
+                const response = await fetch(window.location.pathname + '/preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ AttributeName: attributeName, Timestamp: timestamp }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    handleError(error.message || 'Failed to preview TTL');
+                    document.querySelector('#preview-results').classList.add('hidden');
+                    return;
+                }
+
+                const data = await response.json();
+                displayPreviewResults(data.items, attributeName);
+            } catch (error) {
+                handleError(error);
+                document.querySelector('#preview-results').classList.add('hidden');
+            }
+        });
+
+        function displayPreviewResults(items, attributeName) {
+            document.querySelector('#preview-loading').style.display = 'none';
+
+            if (!items || items.length === 0) {
+                document.querySelector('#preview-empty').classList.remove('hidden');
+                document.querySelector('#preview-count').textContent = '0 items found';
+                lucide.createIcons();
+                return;
+            }
+
+            document.querySelector('#preview-items').classList.remove('hidden');
+            document.querySelector('#preview-count').textContent = `${items.length} item${items.length !== 1 ? 's' : ''} found`;
+
+            const tbody = document.querySelector('#preview-items-body');
+            tbody.innerHTML = '';
+
+            items.forEach(item => {
+                const ttlValue = item[attributeName];
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50 dark:hover:bg-slate-950';
+
+                // Item preview (show first few attributes)
+                const itemPreview = Object.keys(item).slice(0, 3).map(key => {
+                    const value = typeof item[key] === 'object' ? JSON.stringify(item[key]) : item[key];
+                    return `${key}: ${String(value).substring(0, 30)}`;
+                }).join(', ');
+
+                // TTL value
+                const ttlCell = typeof ttlValue === 'number' ? ttlValue : JSON.stringify(ttlValue);
+
+                // Expiration date
+                const expirationDate = typeof ttlValue === 'number'
+                    ? new Date(ttlValue * 1000).toString()
+                    : '-';
+
+                row.innerHTML = `
+                    <td class="px-3 py-3 text-xs text-slate-900 dark:text-slate-100 font-mono">${itemPreview}...</td>
+                    <td class="px-3 py-3 text-xs text-slate-900 dark:text-slate-100 font-mono">${ttlCell}</td>
+                    <td class="px-3 py-3 text-xs text-slate-700 dark:text-slate-300">${expirationDate}</td>
+                `;
+
+                tbody.appendChild(row);
+            });
+
+            lucide.createIcons();
+        }
     </script>
 </body>
 
