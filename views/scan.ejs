@@ -253,10 +253,6 @@
             lucide.createIcons();
         }
 
-        /**
-         * Detects epoch and returns a multi-line UTC/Local string.
-         * Format: MMMM DD, YYYY at HH:mm:ss AM/PM ZONE
-         */
         const getEpochTooltipElement = (value) => {
             // Basic validation: must be integer and at least 9 digits (seconds epoch)
             if (!Number.isInteger(value) || value < 100_000_000) return null;
@@ -266,32 +262,9 @@
 
             if (isNaN(date.getTime())) return null;
 
-            // Configuration for the "Month DD, YYYY at HH:mm:ss AM/PM" format
-            const options = {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            };
-
-            // Helper to format with specific timezone
-            const format = (tz) => {
-                return new Intl.DateTimeFormat('en-US', {
-                    ...options,
-                    timeZone: tz,
-                    timeZoneName: 'short'
-                }).format(date);
-            };
-
-            const utcString = format('UTC');
-            const localString = format(Intl.DateTimeFormat().resolvedOptions().timeZone);
-
             const tooltip = document.createElement('div');
-            tooltip.className = 'absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 dark:bg-slate-800 text-white text-[11px] rounded-lg shadow-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-pre-line min-w-[300px] z-50 pointer-events-none border border-white/10';
-            tooltip.textContent = `UTC: ${utcString}\nLocal: ${localString}`;
+            tooltip.className = 'absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-1 py-1 bg-slate-900 dark:bg-slate-800 text-white text-[11px] rounded-lg shadow-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 whitespace-pre-line min-w-[340px] z-50 pointer-events-none border border-white/10 text-center';
+            tooltip.textContent = `${date.toString()}`;
 
             return tooltip;
         };
