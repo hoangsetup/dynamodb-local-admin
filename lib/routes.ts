@@ -525,6 +525,14 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
         const { TableName } = req.params;
         const { Enabled, AttributeName } = req.body as UpdateTTLInput;
 
+        if (!Enabled) {
+            const { TimeToLiveDescription } = await ddbApi.describeTimeToLive({ TableName });
+            if (TimeToLiveDescription?.TimeToLiveStatus === 'DISABLED') {
+                res.status(204).end();
+                return;
+            }
+        }
+
         await ddbApi.updateTimeToLive({
             TableName,
             TimeToLiveSpecification: {
