@@ -3,7 +3,8 @@
  * Unified header partial for all screens
  *
  * Parameters:
- * - breadcrumb: Array of { text, url?, icon?, active? }
+ * - breadcrumb: Array of { text, url?, icon?, active?, badge? }
+ *   - badge: number (auto-formatted with toLocaleString) or string
  * - tabs: Optional array of { text, url, active }
  * - actions: HTML string for right section buttons/links
  * - theme: Optional theme preference (from server-side)
@@ -50,6 +51,9 @@
                             <% } else { %>
                                 <span class="<%= item.active ? 'text-blue-600 dark:text-blue-300' : '' %>"><%= item.text %></span>
                             <% } %>
+                            <% if (typeof item.badge !== 'undefined' && item.badge !== null) { %>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><%= typeof item.badge === 'number' ? item.badge.toLocaleString() : item.badge %></span>
+                            <% } %>
                         <% }) %>
                     </div>
                     <!-- Navigation Tabs -->
@@ -72,6 +76,9 @@
                             <a href="<%= item.url %>" class="hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><%= item.text %></a>
                         <% } else { %>
                             <span class="<%= item.active ? 'text-blue-600 dark:text-blue-300' : '' %>"><%= item.text %></span>
+                        <% } %>
+                        <% if (typeof item.badge !== 'undefined' && item.badge !== null) { %>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><%= typeof item.badge === 'number' ? item.badge.toLocaleString() : item.badge %></span>
                         <% } %>
                     <% }) %>
                 </div>

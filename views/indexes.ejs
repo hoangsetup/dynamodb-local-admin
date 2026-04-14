@@ -29,7 +29,7 @@
     <%- include('partials/header', {
         breadcrumb: [
             { text: 'Tables', url: '/' },
-            { text: Table.TableName, url: `/tables/${encodeURIComponent(Table.TableName)}` },
+            { text: Table.TableName, url: `/tables/${encodeURIComponent(Table.TableName)}`, badge: Table.ItemCount },
             { text: 'Indexes', active: true }
         ],
         tabs: [],
