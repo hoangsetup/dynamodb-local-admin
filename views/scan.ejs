@@ -229,10 +229,12 @@
 
         // Get key schema from Table
         const keySchema = {
-            <% const hashKey = Table.KeySchema?.find(k => k.KeyType === 'HASH'); %>
-            <% const rangeKey = Table.KeySchema?.find(k => k.KeyType === 'RANGE'); %>
-            hashKey: '<%= hashKey?.AttributeName || '' %>',
-            rangeKey: '<%= rangeKey?.AttributeName || '' %>'
+            <% const hashKey = Table.KeySchema?.find(k => k.KeyType === 'HASH')?.AttributeName || ''; %>
+            <% const rangeKey = Table.KeySchema?.find(k => k.KeyType === 'RANGE')?.AttributeName || ''; %>
+            hashKey: '<%= hashKey %>',
+            hashKeyDataType: '<%= Table.AttributeDefinitions?.find(a => a.AttributeName === hashKey)?.AttributeType || '' %>',
+            rangeKey: '<%= rangeKey %>',
+            rangeKeyDataType: '<%= Table.AttributeDefinitions?.find(a => a.AttributeName === rangeKey)?.AttributeType || '' %>',
         };
 
         const ttlAttributeName = '<%= TimeToLiveDescription.TimeToLiveStatus === 'ENABLED' ? TimeToLiveDescription.AttributeName : ''; %>';
@@ -323,8 +325,8 @@
                 const option = select.options[select.selectedIndex];
                 const hashKey = option.dataset.keyHash;
                 const rangeKey = option.dataset.keyRange;
-                if (hashKey) addHashKeyFilter(hashKey);
-                if (rangeKey) addRangeKeyFilter(rangeKey);
+                if (hashKey) addHashKeyFilter(hashKey, { type: keySchema.hashKeyDataType });
+                if (rangeKey) addRangeKeyFilter(rangeKey, { type: keySchema.rangeKeyDataType });
             }
 
             function unrequireAllFilters() {
