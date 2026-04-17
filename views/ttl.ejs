@@ -30,10 +30,10 @@
         ],
         tabs: [],
         actions: `
-            <a href="/tables/${encodeURIComponent(Table.TableName)}/meta" class="inline-flex items-center px-3 py-1.5 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all no-underline">
+            <button onclick="history.back()" class="inline-flex items-center px-3 py-1.5 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all">
                 <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1.5"></i>
-                BACK TO META
-            </a>
+                BACK
+            </button>
         `
     }) %>
 
@@ -84,9 +84,9 @@
                     </div>
 
                     <div class="mt-6 flex justify-end space-x-3">
-                        <a href="/tables/<%= encodeURIComponent(Table.TableName) %>/meta" class="inline-flex items-center px-4 py-2 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all no-underline">
+                        <button type="button" onclick="history.back()" class="inline-flex items-center px-4 py-2 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all">
                             CANCEL
-                        </a>
+                        </button>
                         <button type="submit" class="inline-flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all">
                             <i data-lucide="save" class="w-3.5 h-3.5 mr-1.5"></i>
                             SAVE CHANGES

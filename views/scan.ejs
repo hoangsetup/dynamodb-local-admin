@@ -49,12 +49,7 @@
             { text: 'Get', url: `/tables/${encodeURIComponent(Table.TableName)}/get`, active: false },
             { text: 'Meta', url: `/tables/${encodeURIComponent(Table.TableName)}/meta`, active: false }
         ],
-        actions: `
-            <a href="/tables/${encodeURIComponent(Table.TableName)}/add-item" class="inline-flex items-center px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg transition-all">
-                <i data-lucide="plus-circle" class="w-3.5 h-3.5 mr-1.5"></i>
-                CREATE ITEM
-            </a>
-        `
+        tableActions: Table.TableName
     }) %>
 
     <main class="grow mx-auto w-full px-4 py-4 mt-18">
@@ -611,6 +606,10 @@
         });
     </script>
 
+    <%- include('partials/confirmation-modal') %>
+
+    <%- include('partials/table-actions-script', { tableName: Table.TableName }) %>
+    <%- include('partials/confirmation-modal-script') %>
 </body>
 
 </html>

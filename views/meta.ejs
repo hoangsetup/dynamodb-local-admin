@@ -10,10 +10,6 @@
 </head>
 
 <body class="min-h-full flex flex-col px-0 py-0 bg-slate-50 dark:bg-slate-950">
-    <%
-        const indexesUrl = `/tables/${encodeURIComponent(Table.TableName)}/indexes`;
-        const ttlUrl = `/tables/${encodeURIComponent(Table.TableName)}/ttl`;
-    %>
     <%- include('partials/header', {
         breadcrumb: [
             { text: 'Tables', url: '/' },
@@ -24,34 +20,7 @@
             { text: 'Get', url: `/tables/${encodeURIComponent(Table.TableName)}/get`, active: false },
             { text: 'Meta', url: `/tables/${encodeURIComponent(Table.TableName)}/meta`, active: true }
         ],
-        actions: `
-            <div class="relative" id="actions-dropdown">
-                <button type="button" id="actions-toggle" class="inline-flex items-center px-3 py-1.5 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all">
-                    <i data-lucide="settings" class="w-3.5 h-3.5 mr-1.5"></i>
-                    ACTIONS
-                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 ml-1"></i>
-                </button>
-                <div id="actions-menu" class="hidden absolute right-0 mt-2 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden z-50">
-                    <a href="${indexesUrl}" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors text-slate-700 dark:text-slate-300 no-underline">
-                        <i data-lucide="list-tree" class="w-4 h-4"></i>
-                        <span>Manage Indexes</span>
-                    </a>
-                    <a href="${ttlUrl}" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors text-slate-700 dark:text-slate-300 no-underline">
-                        <i data-lucide="clock" class="w-4 h-4"></i>
-                        <span>Manage TTL</span>
-                    </a>
-                    <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                    <button type="button" id="purgeTable" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors text-amber-600 dark:text-amber-400">
-                        <i data-lucide="eraser" class="w-4 h-4"></i>
-                        <span>Purge Data</span>
-                    </button>
-                    <button type="button" id="deleteTable" class="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors text-red-600 dark:text-red-400">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        <span>Delete Table</span>
-                    </button>
-                </div>
-            </div>
-        `
+        tableActions: Table.TableName
     }) %>
 
     <main class="grow flex flex-col mx-auto w-full px-4 py-6 mt-18">
@@ -75,25 +44,6 @@
     <script>
         lucide.createIcons();
 
-        // Actions dropdown toggle
-        const actionsToggle = document.querySelector('#actions-toggle');
-        const actionsMenu = document.querySelector('#actions-menu');
-
-        if (actionsToggle && actionsMenu) {
-            actionsToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                actionsMenu.classList.toggle('hidden');
-                lucide.createIcons();
-            });
-
-            // Close menu when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!actionsMenu.contains(e.target) && !actionsToggle.contains(e.target)) {
-                    actionsMenu.classList.add('hidden');
-                }
-            });
-        }
-
         const editor = ace.edit("documentArea");
         editor.resize();
         editor.getSession().setMode("ace/mode/json");
@@ -107,20 +57,9 @@
             useSoftTabs: true,
             tabSize: 2
         });
-
-        // Purge Logic
-        document.querySelector('#purgeTable').addEventListener('click', () => {
-            actionsMenu.classList.add('hidden');
-            purgeTable('<%= Table.TableName %>');
-        });
-
-        // Delete Logic
-        document.querySelector('#deleteTable').addEventListener('click', () => {
-            actionsMenu.classList.add('hidden');
-            deleteTable('<%= Table.TableName %>', '/');
-        });
     </script>
 
+    <%- include('partials/table-actions-script', { tableName: Table.TableName }) %>
     <%- include('partials/confirmation-modal-script') %>
 </body>
 

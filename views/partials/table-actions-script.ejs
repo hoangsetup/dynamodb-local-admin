@@ -1,0 +1,36 @@
+<%
+/**
+ * @name tableName
+ * @type {string} - Raw (unencoded) table name
+ */
+%>
+<script>
+    (function () {
+        const actionsToggle = document.querySelector('#actions-toggle');
+        const actionsMenu = document.querySelector('#actions-menu');
+
+        if (!actionsToggle || !actionsMenu) return;
+
+        actionsToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            actionsMenu.classList.toggle('hidden');
+            lucide.createIcons();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!actionsMenu.contains(e.target) && !actionsToggle.contains(e.target)) {
+                actionsMenu.classList.add('hidden');
+            }
+        });
+
+        document.querySelector('#purgeTable').addEventListener('click', () => {
+            actionsMenu.classList.add('hidden');
+            purgeTable('<%= tableName %>');
+        });
+
+        document.querySelector('#deleteTable').addEventListener('click', () => {
+            actionsMenu.classList.add('hidden');
+            deleteTable('<%= tableName %>', '/');
+        });
+    })();
+</script>

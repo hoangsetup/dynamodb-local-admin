@@ -86,7 +86,11 @@
 
             <!-- Right Section -->
             <div class="flex items-center space-x-2">
-                <%- actions %>
+                <% if (typeof tableActions !== 'undefined' && tableActions) { %>
+                    <%- include('table-actions', { tableName: tableActions }) %>
+                <% } else { %>
+                    <%- actions %>
+                <% } %>
 
                 <!-- Theme Switcher -->
                 <div class="relative" id="theme-switcher">
