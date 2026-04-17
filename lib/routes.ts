@@ -257,6 +257,8 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
                 '>': '>',
                 '<': '<',
                 begins_with: 'begins_with',
+                attribute_exists: 'exists',
+                attribute_not_exists: 'not exists',
             },
             attributeTypes: {
                 S: 'String',
@@ -297,31 +299,39 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
         let i = 0;
 
         for (const key in filters) {
-            if (filters[key].type === 'N') {
-                filters[key].value = Number(filters[key].value);
-            }
+            const operator = filters[key].operator;
+            const isExistsOperator = operator === 'attribute_exists' || operator === 'attribute_not_exists';
 
             ExpressionAttributeNames[`#key${i}`] = key;
-            ExpressionAttributeValues[`:key${i}`] = filters[key].value;
-            const matchedKeySchema = indexBeingUsed
-                ? indexBeingUsed.KeySchema!.find(keySchemaItem => keySchemaItem.AttributeName === key)
-                : undefined;
 
-            if (matchedKeySchema) {
-                // Only the Range key can support begins_with operator
-                if (matchedKeySchema.KeyType === 'RANGE' && filters[key].operator === 'begins_with') {
-                    KeyConditionExpression.push(`${filters[key].operator} ( #key${i} , :key${i})`);
-                } else {
-                    KeyConditionExpression.push(`#key${i} ${filters[key].operator} :key${i}`);
-                }
+            if (isExistsOperator) {
+                FilterExpressions.push(`${operator}(#key${i})`);
             } else {
-                ExpressionAttributeNames[`#key${i}`] = key;
-                ExpressionAttributeValues[`:key${i}`] = filters[key].value;
+                if (filters[key].type === 'N') {
+                    filters[key].value = Number(filters[key].value);
+                }
 
-                if (filters[key].operator === 'begins_with') {
-                    FilterExpressions.push(`${filters[key].operator} ( #key${i} , :key${i})`);
+                ExpressionAttributeValues[`:key${i}`] = filters[key].value;
+                const matchedKeySchema = indexBeingUsed
+                    ? indexBeingUsed.KeySchema!.find(keySchemaItem => keySchemaItem.AttributeName === key)
+                    : undefined;
+
+                if (matchedKeySchema) {
+                    // Only the Range key can support begins_with operator
+                    if (matchedKeySchema.KeyType === 'RANGE' && operator === 'begins_with') {
+                        KeyConditionExpression.push(`${operator} ( #key${i} , :key${i})`);
+                    } else {
+                        KeyConditionExpression.push(`#key${i} ${operator} :key${i}`);
+                    }
                 } else {
-                    FilterExpressions.push(`#key${i} ${filters[key].operator} :key${i}`);
+                    ExpressionAttributeNames[`#key${i}`] = key;
+                    ExpressionAttributeValues[`:key${i}`] = filters[key].value;
+
+                    if (operator === 'begins_with') {
+                        FilterExpressions.push(`${operator} ( #key${i} , :key${i})`);
+                    } else {
+                        FilterExpressions.push(`#key${i} ${operator} :key${i}`);
+                    }
                 }
             }
             // Increment the unique ID variable

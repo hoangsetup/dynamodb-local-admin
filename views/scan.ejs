@@ -111,7 +111,7 @@
                                 <option value="<%= type %>"><%= attributeTypes[type] %></option>
                             <% } %>
                         </select>
-                        <select class="filter-row-operator select w-28">
+                        <select class="filter-row-operator select w-28" onchange="onOperatorChange(this)">
                             <% for (const operator in operators) { %>
                                 <option value="<%= operator %>"><%= operators[operator] %></option>
                             <% } %>
@@ -278,6 +278,15 @@
                 lucide.createIcons();
             }
 
+            const EXISTS_OPERATORS = ['attribute_exists', 'attribute_not_exists'];
+
+            window.onOperatorChange = function(select) {
+                const row = select.closest('.filter-row');
+                const isExists = EXISTS_OPERATORS.includes(select.value);
+                row.querySelector('.filter-row-value').style.display = isExists ? 'none' : '';
+                row.querySelector('.filter-row-type').style.display = isExists ? 'none' : '';
+            }
+
             const form = document.querySelector('#form')
             form.addEventListener('submit', (e) => {
                 const filters = {}
@@ -286,8 +295,9 @@
                     const typeField = filterRow.querySelector('.filter-row-type')
                     const operatorField = filterRow.querySelector('.filter-row-operator')
                     const valueField = filterRow.querySelector('.filter-row-value')
+                    const isExists = EXISTS_OPERATORS.includes(operatorField.value)
 
-                    if (keyField.value && valueField.value) {
+                    if (keyField.value && (valueField.value || isExists)) {
                         filters[keyField.value] = {
                             operator: operatorField.value,
                             value: valueField.value,
@@ -349,6 +359,8 @@
                     const lastRow = document.querySelector('.filter-row');
                     filterRow = lastRow.cloneNode(true);
                     filterRow.querySelector('.filter-row-value').value = values?.value || '';
+                    filterRow.querySelector('.filter-row-value').style.display = '';
+                    filterRow.querySelector('.filter-row-type').style.display = '';
                     document.querySelector('#filters-container').appendChild(filterRow);
                 }
 
@@ -372,6 +384,7 @@
 
                 const opField = filterRow.querySelector('.filter-row-operator');
                 if (values?.operator) opField.value = values.operator;
+                onOperatorChange(opField);
 
                 opField.querySelectorAll('option').forEach(option => {
                     const enabled = availableOperators ? availableOperators.includes(option.value) : true;
@@ -583,7 +596,9 @@
                         filterRows.forEach(row => {
                             const keyField = row.querySelector('.filter-row-key');
                             const valueField = row.querySelector('.filter-row-value');
-                            if (!keyField.value && !valueField.value) {
+                            const opField = row.querySelector('.filter-row-operator');
+                            const isExists = EXISTS_OPERATORS.includes(opField.value);
+                            if (!keyField.value && !valueField.value && !isExists) {
                                 row.remove();
                             }
                         });
