@@ -259,6 +259,8 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
                 begins_with: 'begins_with',
                 attribute_exists: 'exists',
                 attribute_not_exists: 'not exists',
+                contains: 'contains',
+                'not contains': 'not contains',
             },
             attributeTypes: {
                 S: 'String',
@@ -327,8 +329,8 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
                     ExpressionAttributeNames[`#key${i}`] = key;
                     ExpressionAttributeValues[`:key${i}`] = filters[key].value;
 
-                    if (operator === 'begins_with') {
-                        FilterExpressions.push(`${operator} ( #key${i} , :key${i})`);
+                    if (operator === 'begins_with' || operator === 'contains' || operator === 'not contains') {
+                        FilterExpressions.push(`${operator}(#key${i}, :key${i})`);
                     } else {
                         FilterExpressions.push(`#key${i} ${operator} :key${i}`);
                     }
