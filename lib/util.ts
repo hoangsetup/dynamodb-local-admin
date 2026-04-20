@@ -1,5 +1,5 @@
-import type { AttributeDefinition, KeySchemaElement, QueryInput, TableDescription } from '@aws-sdk/client-dynamodb';
-import type { ScanCommandInput, QueryCommandInput } from '@aws-sdk/lib-dynamodb';
+import type { AttributeDefinition, KeySchemaElement, TableDescription } from '@aws-sdk/client-dynamodb';
+import type { QueryCommandInput, ScanCommandInput } from '@aws-sdk/lib-dynamodb';
 import type { DynamoApiController } from './dynamoDbApi';
 import type { ItemList, Key } from './types';
 
@@ -12,7 +12,7 @@ export class DynamoDBAdminError extends Error {
     }
 }
 
-export type ScanParams = Omit<ScanCommandInput & QueryInput, 'TableName' | 'Limit'>;
+export type ScanParams = Omit<ScanCommandInput & QueryCommandInput, 'TableName' | 'Limit'>;
 
 export function extractKey(item: Record<string, any>, keySchema: KeySchemaElement[]): Record<string, any> {
     return keySchema.reduce((prev, current) => {
@@ -122,4 +122,57 @@ function typecastKey(keyName: string, keyValue: string, table: TableDescription)
 
 export function isAttributeNotAlreadyCreated(attributeDefinitions: AttributeDefinition[], attributeName: string): boolean {
     return !attributeDefinitions.find(attributeDefinition => attributeDefinition.AttributeName === attributeName);
+}
+
+export function buildScanParams({
+    filters,
+    ExclusiveStartKey,
+    queryableSelection,
+    indexBeingUsed,
+}: {
+    filters: Record<string, {
+        operator: string;
+        type?: 'N' | 'S';
+        value: string | number;
+    }>;
+    ExclusiveStartKey: Record<string, unknown>;
+    queryableSelection: string;
+    indexBeingUsed: { KeySchema?: { AttributeName?: string; KeyType?: string }[] } | null;
+}): ScanParams {
+    const ExpressionAttributeNames: NonNullable<ScanCommandInput['ExpressionAttributeNames']> = {};
+    const ExpressionAttributeValues: NonNullable<ScanCommandInput['ExpressionAttributeValues']> = {};
+    const FilterExpressions: string[] = [];
+    const KeyConditionExpressions: string[] = [];
+
+    Object.entries(filters).forEach(([key, { operator, type, value}], i) => {
+        const namePlaceholder = `#key${i}`;
+        const valuePlaceholder = `:key${i}`;
+        const isExistsOperator = ['attribute_exists', 'attribute_not_exists'].includes(operator);
+
+        ExpressionAttributeNames[namePlaceholder] = key;
+
+        if (isExistsOperator) {
+            FilterExpressions.push(`${operator}(${namePlaceholder})`);
+        } else {
+            ExpressionAttributeValues[valuePlaceholder] = type === 'N' ? Number(value) : value;
+
+            const isKey = indexBeingUsed?.KeySchema?.some(k => k.AttributeName === key);
+            const targetExpressions = isKey ? KeyConditionExpressions : FilterExpressions;
+            const expressionMap: Record<string, string> = {
+                'begins_with': `${operator}(${namePlaceholder}, ${valuePlaceholder})`,
+                'contains': `${operator}(${namePlaceholder}, ${valuePlaceholder})`,
+                'not contains': `NOT contains(${namePlaceholder}, ${valuePlaceholder})`,
+            };
+            targetExpressions.push(expressionMap[operator] ?? `${namePlaceholder} ${operator} ${valuePlaceholder}`);
+        }
+    });
+
+    return {
+        FilterExpression: FilterExpressions.length ? FilterExpressions.join(' AND ') : undefined,
+        ExclusiveStartKey: Object.keys(ExclusiveStartKey).length ? ExclusiveStartKey : undefined,
+        ExpressionAttributeNames: Object.keys(ExpressionAttributeNames).length ? ExpressionAttributeNames : undefined,
+        ExpressionAttributeValues: Object.keys(ExpressionAttributeValues).length ? ExpressionAttributeValues : undefined,
+        KeyConditionExpression: KeyConditionExpressions.length ? KeyConditionExpressions.join(' AND ') : undefined,
+        IndexName: queryableSelection !== 'table' ? queryableSelection : undefined,
+    };
 }

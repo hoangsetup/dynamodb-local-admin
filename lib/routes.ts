@@ -1,10 +1,16 @@
 import path from 'node:path';
-import type { AttributeDefinition, KeySchemaElement, GlobalSecondaryIndex, LocalSecondaryIndex, ScanInput, QueryInput, ScalarAttributeType } from '@aws-sdk/client-dynamodb';
+import type { AttributeDefinition, KeySchemaElement, GlobalSecondaryIndex, LocalSecondaryIndex, ScalarAttributeType } from '@aws-sdk/client-dynamodb';
 import express, { type Express, type ErrorRequestHandler } from 'express';
 import bodyParser from 'body-parser';
 import pickBy from 'lodash.pickby';
 import cookieParser from 'cookie-parser';
-import { extractKey, extractKeysForItems, isAttributeNotAlreadyCreated, parseKey, ScanParams } from './util';
+import {
+    extractKey,
+    extractKeysForItems,
+    isAttributeNotAlreadyCreated,
+    parseKey,
+    buildScanParams,
+} from './util';
 import { getPage } from './actions/getPage';
 import { purgeTable } from './actions/purgeTable';
 import { listAllTables } from './actions/listAllTables';
@@ -280,74 +286,20 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
         const pageNum = typeof req.query.pageNum === 'string' ? parseInt(req.query.pageNum) : 1;
         const queryableSelection = typeof req.query.queryableSelection === 'string' ? req.query.queryableSelection : 'table';
         const operationType: 'scan' | 'query' = req.query.operationType === 'query' ? 'query' : 'scan';
-        let indexBeingUsed = null;
-
         const tableDescription = await ddbApi.describeTable({ TableName });
 
+        let indexBeingUsed: Parameters<typeof buildScanParams>[0]['indexBeingUsed'] = null;
         if (operationType === 'query') {
             if (queryableSelection === 'table') {
-                indexBeingUsed = tableDescription;
+                indexBeingUsed = tableDescription ?? null;
             } else if (tableDescription.GlobalSecondaryIndexes) {
-                indexBeingUsed = tableDescription.GlobalSecondaryIndexes.find(index => index.IndexName === req.query.queryableSelection);
+                indexBeingUsed = tableDescription.GlobalSecondaryIndexes.find(
+                    (index) => index.IndexName === queryableSelection,
+                ) ?? null;
             }
         }
 
-        const ExpressionAttributeNames: ScanInput['ExpressionAttributeNames'] | QueryInput['ExpressionAttributeNames'] = {};
-        const ExpressionAttributeValues: ScanInput['ExpressionAttributeValues'] | QueryInput['ExpressionAttributeValues'] = {};
-        const FilterExpressions: string[] = [];
-        const KeyConditionExpression: string[] = [];
-
-        // Create a variable to uniquely identify each expression attribute
-        let i = 0;
-
-        for (const key in filters) {
-            const operator = filters[key].operator;
-            const isExistsOperator = operator === 'attribute_exists' || operator === 'attribute_not_exists';
-
-            ExpressionAttributeNames[`#key${i}`] = key;
-
-            if (isExistsOperator) {
-                FilterExpressions.push(`${operator}(#key${i})`);
-            } else {
-                if (filters[key].type === 'N') {
-                    filters[key].value = Number(filters[key].value);
-                }
-
-                ExpressionAttributeValues[`:key${i}`] = filters[key].value;
-                const matchedKeySchema = indexBeingUsed
-                    ? indexBeingUsed.KeySchema!.find(keySchemaItem => keySchemaItem.AttributeName === key)
-                    : undefined;
-
-                if (matchedKeySchema) {
-                    // Only the Range key can support begins_with operator
-                    if (matchedKeySchema.KeyType === 'RANGE' && operator === 'begins_with') {
-                        KeyConditionExpression.push(`${operator} ( #key${i} , :key${i})`);
-                    } else {
-                        KeyConditionExpression.push(`#key${i} ${operator} :key${i}`);
-                    }
-                } else {
-                    ExpressionAttributeNames[`#key${i}`] = key;
-                    ExpressionAttributeValues[`:key${i}`] = filters[key].value;
-
-                    if (operator === 'begins_with' || operator === 'contains' || operator === 'not contains') {
-                        FilterExpressions.push(`${operator}(#key${i}, :key${i})`);
-                    } else {
-                        FilterExpressions.push(`#key${i} ${operator} :key${i}`);
-                    }
-                }
-            }
-            // Increment the unique ID variable
-            i = i + 1;
-        }
-
-        const params: ScanParams = {
-            FilterExpression: FilterExpressions.length ? FilterExpressions.join(' AND ') : undefined,
-            ExclusiveStartKey: Object.keys(ExclusiveStartKey).length ? ExclusiveStartKey : undefined,
-            ExpressionAttributeNames: Object.keys(ExpressionAttributeNames).length ? ExpressionAttributeNames : undefined,
-            ExpressionAttributeValues: Object.keys(ExpressionAttributeValues).length ? ExpressionAttributeValues : undefined,
-            KeyConditionExpression: KeyConditionExpression.length ? KeyConditionExpression.join(' AND ') : undefined,
-            IndexName: queryableSelection !== 'table' ? queryableSelection : undefined,
-        };
+        const params = buildScanParams({ filters, ExclusiveStartKey, queryableSelection, indexBeingUsed });
         const pageSize = typeof req.query.pageSize === 'string' ? Number.parseInt(req.query.pageSize) : 25;
 
         const results = await getPage(ddbApi, TableName, params, pageSize, operationType);
