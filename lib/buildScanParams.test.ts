@@ -87,6 +87,45 @@ describe('buildScanParams', () => {
         });
     });
 
+    describe('BETWEEN operator', () => {
+        it('builds BETWEEN FilterExpression with _low and _high placeholders', () => {
+            const result = buildScanParams({
+                filters: { age: { operator: 'BETWEEN', value: '20', value2: '30' } },
+                ExclusiveStartKey: {},
+                queryableSelection: 'table',
+                indexBeingUsed: noIndex,
+            });
+
+            expect(result.FilterExpression).toBe('#key0 BETWEEN :key0_low AND :key0_high');
+            expect(result.ExpressionAttributeNames).toEqual({ '#key0': 'age' });
+            expect(result.ExpressionAttributeValues).toEqual({ ':key0_low': '20', ':key0_high': '30' });
+            expect(result.KeyConditionExpression).toBeUndefined();
+        });
+
+        it('coerces both values to Number when type is "N"', () => {
+            const result = buildScanParams({
+                filters: { age: { operator: 'BETWEEN', type: 'N', value: '20', value2: '30' } },
+                ExclusiveStartKey: {},
+                queryableSelection: 'table',
+                indexBeingUsed: noIndex,
+            });
+
+            expect(result.ExpressionAttributeValues).toEqual({ ':key0_low': 20, ':key0_high': 30 });
+        });
+
+        it('puts BETWEEN into KeyConditionExpression for a key attribute', () => {
+            const result = buildScanParams({
+                filters: { sk: { operator: 'BETWEEN', value: 'a', value2: 'z' } },
+                ExclusiveStartKey: {},
+                queryableSelection: 'table',
+                indexBeingUsed: tableIndex,
+            });
+
+            expect(result.KeyConditionExpression).toBe('#key0 BETWEEN :key0_low AND :key0_high');
+            expect(result.FilterExpression).toBeUndefined();
+        });
+    });
+
     describe('attribute_exists / attribute_not_exists operators', () => {
         it('builds attribute_exists FilterExpression without a value', () => {
             const result = buildScanParams({

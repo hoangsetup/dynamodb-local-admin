@@ -134,6 +134,7 @@ export function buildScanParams({
         operator: string;
         type?: 'N' | 'S';
         value: string | number;
+        value2?: string | number;
     }>;
     ExclusiveStartKey: Record<string, unknown>;
     queryableSelection: string;
@@ -144,20 +145,24 @@ export function buildScanParams({
     const FilterExpressions: string[] = [];
     const KeyConditionExpressions: string[] = [];
 
-    Object.entries(filters).forEach(([key, { operator, type, value}], i) => {
+    Object.entries(filters).forEach(([key, { operator, type, value, value2 }], i) => {
         const namePlaceholder = `#key${i}`;
         const valuePlaceholder = `:key${i}`;
         const isExistsOperator = ['attribute_exists', 'attribute_not_exists'].includes(operator);
+        const isKey = indexBeingUsed?.KeySchema?.some(k => k.AttributeName === key);
+        const targetExpressions = isKey ? KeyConditionExpressions : FilterExpressions;
 
         ExpressionAttributeNames[namePlaceholder] = key;
 
         if (isExistsOperator) {
             FilterExpressions.push(`${operator}(${namePlaceholder})`);
+        } else if (operator === 'BETWEEN') {
+            const cast = (v: string | number) => type === 'N' ? Number(v) : v;
+            ExpressionAttributeValues[`${valuePlaceholder}_low`] = cast(value);
+            ExpressionAttributeValues[`${valuePlaceholder}_high`] = cast(value2 ?? value);
+            targetExpressions.push(`${namePlaceholder} BETWEEN ${valuePlaceholder}_low AND ${valuePlaceholder}_high`);
         } else {
             ExpressionAttributeValues[valuePlaceholder] = type === 'N' ? Number(value) : value;
-
-            const isKey = indexBeingUsed?.KeySchema?.some(k => k.AttributeName === key);
-            const targetExpressions = isKey ? KeyConditionExpressions : FilterExpressions;
             const expressionMap: Record<string, string> = {
                 'begins_with': `${operator}(${namePlaceholder}, ${valuePlaceholder})`,
                 'contains': `${operator}(${namePlaceholder}, ${valuePlaceholder})`,

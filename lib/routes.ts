@@ -267,6 +267,7 @@ export function setupRoutes(app: Express, ddbApi: DynamoApiController): void {
                 attribute_not_exists: 'not exists',
                 contains: 'contains',
                 'not contains': 'not contains',
+                BETWEEN: 'between',
             },
             attributeTypes: {
                 S: 'String',

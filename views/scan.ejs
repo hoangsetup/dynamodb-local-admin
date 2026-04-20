@@ -117,6 +117,7 @@
                             <% } %>
                         </select>
                         <input type="text" class="filter-row-value input flex-1" placeholder="Value" />
+                        <input type="text" class="filter-row-value2 input flex-1" placeholder="To" style="display:none" />
                         <button type="button" onclick="removeFilter(this)" class="filter-remove shrink-0 flex items-center text-[10px] font-bold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 mono px-2 py-1.5 rounded border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors">
                             <i data-lucide="x" class="w-3 h-3 mr-1"></i> REMOVE
                         </button>
@@ -283,7 +284,9 @@
             window.onOperatorChange = function(select) {
                 const row = select.closest('.filter-row');
                 const isExists = EXISTS_OPERATORS.includes(select.value);
+                const isBetween = select.value === 'BETWEEN';
                 row.querySelector('.filter-row-value').style.display = isExists ? 'none' : '';
+                row.querySelector('.filter-row-value2').style.display = isBetween ? '' : 'none';
                 row.querySelector('.filter-row-type').style.display = isExists ? 'none' : '';
             }
 
@@ -295,12 +298,14 @@
                     const typeField = filterRow.querySelector('.filter-row-type')
                     const operatorField = filterRow.querySelector('.filter-row-operator')
                     const valueField = filterRow.querySelector('.filter-row-value')
+                    const value2Field = filterRow.querySelector('.filter-row-value2')
                     const isExists = EXISTS_OPERATORS.includes(operatorField.value)
 
                     if (keyField.value && (valueField.value || isExists)) {
                         filters[keyField.value] = {
                             operator: operatorField.value,
                             value: valueField.value,
+                            value2: value2Field.value || undefined,
                             type: typeField.value,
                         }
                     }
@@ -360,6 +365,8 @@
                     filterRow = lastRow.cloneNode(true);
                     filterRow.querySelector('.filter-row-value').value = values?.value || '';
                     filterRow.querySelector('.filter-row-value').style.display = '';
+                    filterRow.querySelector('.filter-row-value2').value = values?.value2 || '';
+                    filterRow.querySelector('.filter-row-value2').style.display = 'none';
                     filterRow.querySelector('.filter-row-type').style.display = '';
                     document.querySelector('#filters-container').appendChild(filterRow);
                 }
