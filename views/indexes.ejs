@@ -115,7 +115,12 @@
                                             <span class="text-slate-400 dark:text-slate-600">—</span>
                                         <% } %>
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100"><%= gsi.Projection?.ProjectionType || 'ALL' %></td>
+                                    <td class="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
+                                        <%= gsi.Projection?.ProjectionType || 'ALL' %>
+                                        <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">
+                                            <%= gsi.Projection?.ProjectionType === 'INCLUDE' ? `(${gsi.Projection.NonKeyAttributes.join(', ')})` : '' %>
+                                        </span>
+                                    </td>
                                     <td class="px-4 py-3 text-right">
                                         <button type="button" class="delete-gsi-btn inline-flex items-center px-2 py-1 rounded hover:bg-red-600 text-red-600 dark:text-red-400 hover:text-white text-xs font-bold transition-all" data-index-name="<%= gsi.IndexName %>">
                                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
